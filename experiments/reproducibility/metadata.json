@@ -1,0 +1,13 @@
+{
+    "timestamp": "2026-06-29T11:47:35.127902",
+    "python_version": "3.12.7",
+    "cpu_info": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "os": "Windows-11-10.0.26200-SP0",
+    "logical_cores": 28,
+    "packages": {
+        "numpy": "1.26.4",
+        "pandas": "2.2.3",
+        "pymoo": "0.6.1.6",
+        "scipy": "1.11.4"
+    }
+}

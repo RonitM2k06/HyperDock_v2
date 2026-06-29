@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Cargo Manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Space Cargo Manager</h1>
+
+    <div>
+        <h2>Add Storage Container</h2>
+        <input type="text" id="containerName" placeholder="Enter Container Name">
+        <button onclick="addContainer()">Add</button>
+    </div>
+
+    <div>
+        <h2>Storage Containers</h2>
+        <button onclick="getContainers()">Load Containers</button>
+        <ul id="containerList"></ul>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,730 @@
+{
+  "benchmark_id": "HB-V1-SC3-50",
+  "scenario": "SC3",
+  "scale": 50,
+  "seed": 3295502053,
+  "theoretical_utilization": 0.9615,
+  "containers": [
+    {
+      "container_id": "C-HAB-01",
+      "zone": "HABITATION",
+      "absolute_origin_xyz_meters": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "dimensions_wdh_meters": [
+        1.3698,
+        1.3698,
+        1.3698
+      ],
+      "open_face_normal": [
+        0,
+        -1,
+        0
+      ]
+    }
+  ],
+  "items": [
+    {
+      "item_id": "ITM-0001",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.248
+      ],
+      "mass_kg": 15.32,
+      "priority": 3,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0002",
+      "category": "payload",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 10.99,
+      "priority": 15,
+      "retrieval_lambda": 0.2
+    },
+    {
+      "item_id": "ITM-0003",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 46.35,
+      "priority": 31,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0004",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 2.6,
+      "priority": 81,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0005",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 4.67,
+      "priority": 78,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0006",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 6.91,
+      "priority": 78,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0007",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 16.54,
+      "priority": 62,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0008",
+      "category": "payload",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.251,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 8.37,
+      "priority": 79,
+      "retrieval_lambda": 0.2
+    },
+    {
+      "item_id": "ITM-0009",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.248
+      ],
+      "mass_kg": 1.98,
+      "priority": 62,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0010",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.251,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 6.95,
+      "priority": 51,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0011",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.248
+      ],
+      "mass_kg": 4.9,
+      "priority": 83,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0012",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.251,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 26.78,
+      "priority": 1,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0013",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 2.01,
+      "priority": 33,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0014",
+      "category": "safety",
+      "criticality": "medical_emergency",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.248
+      ],
+      "mass_kg": 2.86,
+      "priority": 2,
+      "retrieval_lambda": 0.01
+    },
+    {
+      "item_id": "ITM-0015",
+      "category": "safety",
+      "criticality": "medical_emergency",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 1.49,
+      "priority": 2,
+      "retrieval_lambda": 0.01
+    },
+    {
+      "item_id": "ITM-0016",
+      "category": "safety",
+      "criticality": "medical_emergency",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.251,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 2.61,
+      "priority": 37,
+      "retrieval_lambda": 0.01
+    },
+    {
+      "item_id": "ITM-0017",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.717,
+        0.334,
+        0.165
+      ],
+      "mass_kg": 3.39,
+      "priority": 84,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0018",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.251,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 2.91,
+      "priority": 71,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0019",
+      "category": "payload",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.291,
+        0.416,
+        0.384
+      ],
+      "mass_kg": 4.76,
+      "priority": 13,
+      "retrieval_lambda": 0.2
+    },
+    {
+      "item_id": "ITM-0020",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.248
+      ],
+      "mass_kg": 8.43,
+      "priority": 69,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0021",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.496
+      ],
+      "mass_kg": 6.86,
+      "priority": 71,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0022",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 14.62,
+      "priority": 84,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0023",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.248
+      ],
+      "mass_kg": 14.74,
+      "priority": 54,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0024",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 10.45,
+      "priority": 93,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0025",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.248
+      ],
+      "mass_kg": 6.0,
+      "priority": 42,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0026",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.248
+      ],
+      "mass_kg": 4.11,
+      "priority": 95,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0027",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.248
+      ],
+      "mass_kg": 6.14,
+      "priority": 24,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0028",
+      "category": "safety",
+      "criticality": "medical_emergency",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.131,
+        0.386,
+        0.149
+      ],
+      "mass_kg": 3.63,
+      "priority": 79,
+      "retrieval_lambda": 0.01
+    },
+    {
+      "item_id": "ITM-0029",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.671,
+        0.643,
+        0.25
+      ],
+      "mass_kg": 3.27,
+      "priority": 62,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0030",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.251,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 2.07,
+      "priority": 70,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0031",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.496
+      ],
+      "mass_kg": 1.25,
+      "priority": 11,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0032",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.251,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 4.42,
+      "priority": 59,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0033",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.662,
+        0.345,
+        0.125
+      ],
+      "mass_kg": 40.76,
+      "priority": 84,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0034",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 5.05,
+      "priority": 53,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0035",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.248
+      ],
+      "mass_kg": 12.16,
+      "priority": 52,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0036",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.248
+      ],
+      "mass_kg": 2.73,
+      "priority": 81,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0037",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.496
+      ],
+      "mass_kg": 6.64,
+      "priority": 55,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0038",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.311,
+        0.428,
+        0.439
+      ],
+      "mass_kg": 47.58,
+      "priority": 75,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0039",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.391,
+        0.703,
+        0.215
+      ],
+      "mass_kg": 3.44,
+      "priority": 56,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0040",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 1.92,
+      "priority": 26,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0041",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.251,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 9.52,
+      "priority": 22,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0042",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 3.65,
+      "priority": 40,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0043",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.496
+      ],
+      "mass_kg": 12.81,
+      "priority": 37,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0044",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.248
+      ],
+      "mass_kg": 5.28,
+      "priority": 32,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0045",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 4.76,
+      "priority": 50,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0046",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.756,
+        0.682,
+        0.707
+      ],
+      "mass_kg": 8.98,
+      "priority": 20,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0047",
+      "category": "hardware",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.248
+      ],
+      "mass_kg": 6.64,
+      "priority": 98,
+      "retrieval_lambda": 0.5
+    },
+    {
+      "item_id": "ITM-0048",
+      "category": "safety",
+      "criticality": "medical_emergency",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.496
+      ],
+      "mass_kg": 1.3,
+      "priority": 65,
+      "retrieval_lambda": 0.01
+    },
+    {
+      "item_id": "ITM-0049",
+      "category": "consumable",
+      "criticality": "essential",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.502,
+        0.425,
+        0.248
+      ],
+      "mass_kg": 7.86,
+      "priority": 42,
+      "retrieval_lambda": 4.0
+    },
+    {
+      "item_id": "ITM-0050",
+      "category": "payload",
+      "criticality": "nominal",
+      "preferred_zone": "GENERIC",
+      "dimensions_wdh_meters": [
+        0.251,
+        0.425,
+        0.124
+      ],
+      "mass_kg": 2.84,
+      "priority": 22,
+      "retrieval_lambda": 0.2
+    }
+  ]
+}
