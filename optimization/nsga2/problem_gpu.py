@@ -114,14 +114,15 @@ class CargoProblemGPU(Problem):
         all_dims = np.zeros((pop_size, self.n_items, 3), dtype=np.float32)
         all_masses = np.zeros((pop_size, self.n_items), dtype=np.float32)
         all_categories = np.zeros((pop_size, self.n_items), dtype=np.float32)
-        
+        all_valid = np.zeros((pop_size, self.n_items), dtype=bool)  # True for packed items only
+
         valid_mask = np.zeros(pop_size, dtype=bool)
-        
+
         for res in results:
             idx, unplaced_vol, unplaced_count, num_packed, pts, dims, masses, cats = res
             g1[idx] = unplaced_vol
             g2[idx] = unplaced_count
-            
+
             if num_packed == 0:
                 f1[idx] = 9999.0
                 f2[idx] = 0.0
@@ -130,17 +131,19 @@ class CargoProblemGPU(Problem):
                 all_dims[idx] = dims
                 all_masses[idx] = masses
                 all_categories[idx] = cats
+                all_valid[idx, :num_packed] = True  # pack_chromosome writes packed items first
                 valid_mask[idx] = True
-                
+
         # 3. Batched GPU Evaluation
         if np.any(valid_mask):
             pts_tensor = torch.from_numpy(all_pts[valid_mask]).to(self.device)
             dims_tensor = torch.from_numpy(all_dims[valid_mask]).to(self.device)
             masses_tensor = torch.from_numpy(all_masses[valid_mask]).to(self.device)
             cat_tensor = torch.from_numpy(all_categories[valid_mask]).to(self.device)
-            
+            valid_tensor = torch.from_numpy(all_valid[valid_mask]).to(self.device)
+
             with torch.no_grad():
-                casc_scores = self.casc_gpu.evaluate_population(pts_tensor, dims_tensor, masses_tensor, cat_tensor)
+                casc_scores = self.casc_gpu.evaluate_population(pts_tensor, dims_tensor, masses_tensor, cat_tensor, valid_tensor)
                 com_scores = self.com_gpu.evaluate_population(pts_tensor, dims_tensor, masses_tensor)
                 
             casc_scores_np = casc_scores.cpu().numpy()

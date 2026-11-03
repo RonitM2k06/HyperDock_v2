@@ -8,21 +8,26 @@ class CASCv2GPU:
         self.config = config or CASCv2Config()
         self.device = device or torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    def evaluate_population(self, pop_points: torch.Tensor, pop_dims: torch.Tensor, pop_masses: torch.Tensor, pop_categories: torch.Tensor) -> torch.Tensor:
+    def evaluate_population(self, pop_points: torch.Tensor, pop_dims: torch.Tensor, pop_masses: torch.Tensor, pop_categories: torch.Tensor, pop_valid: torch.Tensor = None) -> torch.Tensor:
         """
         Evaluates CASC for an entire NSGA-II population simultaneously.
-        
+
         Args:
             pop_points: [batch_size, num_items, 3] tensor of item coordinates.
             pop_dims: [batch_size, num_items, 3] tensor of item dimensions.
             pop_masses: [batch_size, num_items] tensor of item masses.
             pop_categories: [batch_size, num_items] tensor of rigidity coefficients (rho).
-            
+            pop_valid: optional [batch_size, num_items] bool tensor. True marks a packed
+                item. Rows that are False are padding for unplaced items: they are
+                excluded from the blocking graph and from the mean. Without this mask,
+                padding rows act as real items at the origin and bias the score
+                (see tests/test_casc_gpu_mask.py).
+
         Returns:
-            total_casc: [batch_size] tensor of aggregate CASC scores per layout.
+            total_casc: [batch_size] tensor of mean CASC scores over packed items per layout.
         """
         B, N, _ = pop_points.shape
-        
+
         if N == 0:
             return torch.zeros(B, device=self.device)
 
@@ -50,7 +55,11 @@ class CASCv2GPU:
         overlap_y = ~( (iy + id_y <= jy + 1e-5) | (iy >= jy + jd_y - 1e-5) )
         
         blocking_graph = z_mask & overlap_x & overlap_y # [B, N, N] (i blocked by j)
-        
+        if pop_valid is not None:
+            # Padding rows neither block nor are blocked.
+            valid_pair = pop_valid[:, :, None] & pop_valid[:, None, :]
+            blocking_graph = blocking_graph & valid_pair
+
         # 3. Transitive Blockers (Matrix Power / Warshall approximation for DAG)
         transitive_graph = blocking_graph.clone()
         for _ in range(N):
@@ -111,5 +120,8 @@ class CASCv2GPU:
         c_total = c_reach + c_occ + c_ext # [B, N]
         casc_scores = torch.exp(-c_total) # [B, N]
         
-        return casc_scores.mean(dim=1) # [B] (returning mean CASC as the objective)
+        if pop_valid is None:
+            return casc_scores.mean(dim=1) # [B] (returning mean CASC as the objective)
+        v = pop_valid.to(casc_scores.dtype)
+        return (casc_scores * v).sum(dim=1) / v.sum(dim=1).clamp_min(1.0) # [B] mean over packed items
 
