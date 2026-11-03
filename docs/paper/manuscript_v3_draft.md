@@ -6,7 +6,7 @@
 
 ## Abstract
 
-Multi-objective evolutionary search is proposed for stowing cargo in spacecraft logistics modules, where centre-of-mass (CoM) stability and retrieval accessibility conflict. We study a bi-objective formulation on synthetic top-loading benchmarks: a CoM deviation objective and an accessibility score (CASC), searched with NSGA-II over packing sequences and orientations and decoded by an Extreme Point (EP) heuristic. Our earlier committed analysis suggested that NSGA-II outperforms single deterministic constructions in hypervolume. That analysis is superseded: its search outputs were mostly infeasible, and its batched scorer mis-scored every infeasible layout. In a matched-budget reduced experiment (three seeds, four SC1 datasets, N = 50–500), plain NSGA-II found no feasible packing on three of four datasets, while a feasibility-aware variant that falls back to a decreasing-volume decode found at least one feasible packing in every run. Random search with the same evaluation budget found none. Under a fixed evaluation budget the variant performs about twice as many decoder calls and runs about 1.7–1.8 times longer than NSGA-II. With three seeds no comparison reaches significance. The full evaluation, which is needed to test the claim, has not yet been run, and no GPU speedup is claimed.
+Multi-objective evolutionary search is proposed for stowing cargo in spacecraft logistics modules, where centre-of-mass (CoM) stability and retrieval accessibility conflict. We study a bi-objective formulation on synthetic top-loading benchmarks: a CoM deviation objective and an accessibility score (CASC), searched with NSGA-II over packing sequences and orientations and decoded by an Extreme Point (EP) heuristic. Our earlier committed analysis suggested that NSGA-II outperforms single deterministic constructions in hypervolume. That analysis is superseded: its search outputs were mostly infeasible, and its batched scorer mis-scored every infeasible layout. In a matched-budget reduced experiment (three seeds, four SC1 datasets, N = 50–500), plain NSGA-II found no feasible packing on three of four datasets, while a feasibility-aware variant that falls back to a decreasing-volume decode found at least one feasible packing in every run. Random search with the same evaluation budget found none. Under a fixed evaluation budget the variant performs about twice as many decoder calls and runs about 1.7–1.8 times longer than NSGA-II. With three seeds no comparison reaches significance. The full evaluation, which is needed to test the claim, has not yet been run. A batched GPU scorer is 4–6 times faster than the CPU scorer for scoring alone; whole-run GPU speed is not measured.
 
 **Keywords:** spacecraft logistics; 3D packing; multi-objective evolutionary optimisation; NSGA-II; constraint handling; matched-budget evaluation; reproducibility
 
@@ -22,7 +22,7 @@ We therefore reframe the contribution. We contribute:
 3. A feasibility-aware NSGA-II variant with a documented fallback decode, and a matched-budget comparison harness that counts evaluations and decoder calls separately (Sections 4.4 and 5).
 4. A reduced matched-budget experiment that shows how feasibility, not only the trade-off itself, separates the methods (Section 6.5), together with the full evaluation protocol that remains to be executed (Section 5.6).
 
-We do not claim a validated accessibility benefit, a validated retrieval model, a GPU speedup, or superiority over other methods.
+We do not claim a validated accessibility benefit, a validated retrieval model, a whole-run GPU speedup, or superiority over other methods. We do report a scoring-stage speedup, measured on a laptop GPU (Section 6.4).
 
 ## 2. Related Work
 
@@ -117,7 +117,7 @@ Two earlier analyses are superseded. Analysis A (a Wilcoxon test of 30 stochasti
 4. Regenerated figures and tables from the full run, replacing the superseded Phase 5 outputs.
 5. Ablations: orientation off; each CASC term; the support constraint.
 6. CoM and CASC weight sensitivity.
-7. CPU versus GPU scoring time on the laptop's NVIDIA RTX 4050 Laptop GPU, using `experiments/benchmark_gpu_v2.py` (warm-up, CUDA synchronisation, repeated trials, peak GPU memory). The earlier benchmark was invalid: it timed packing as well as scoring, included start-up, and reported PASSED on an empty comparison, so none of its numbers are reported here.
+7. Scoring-stage timing is complete (Section 6.4). Whole-run timing with the GPU scorer, including packing, is not measured. The earlier benchmark was invalid: it timed packing as well as scoring, included start-up, and reported PASSED on an empty comparison, so none of its numbers are reported.
 
 ## 6. Results
 
@@ -153,7 +153,7 @@ The laptop timings below are for the reduced run (three seeds, CPU reference pat
 | SC1-250 | 165.9 | 294.8 | 160.9 |
 | SC1-500 | 1,592 (median 807) | 1,369 | 884 |
 
-The batched GPU scorer has not yet been timed on the laptop with the corrected code. No speedup is claimed **[PENDING, item 7]**.
+**Scoring-stage GPU timing (executed).** On an NVIDIA GeForce RTX 4050 Laptop GPU (torch 2.11.0+cu128) with SC1-100, scoring a batch of packed layouts takes 0.101 s, 0.227 s and 0.449 s on the CPU for 50, 100 and 250 layouts, against 0.016 s, 0.041 s and 0.108 s on the GPU. Medians of five timed repeats after two warm-up calls, with CUDA synchronisation: speedups of 6.4x, 5.5x and 4.1x. Peak GPU memory was 17–55 MB. Per-layout CASC and CoM agree with the CPU reference to 4.1 × 10⁻⁸ or better. **This is a speedup of the scoring step only.** Packing remains on the CPU, and the whole-run speedup has not been measured. From a rough split of run time, scoring is perhaps a fifth of an evaluation, so the expected whole-run gain is modest. This estimate is not measured and must not be reported as a result.
 
 ### 6.5 Reduced matched-budget evaluation (executed, three seeds)
 
@@ -189,7 +189,7 @@ The decoder design, which allows floating items, may bias the accessibility obje
 - **Internal.** The committed Phase 5 results used a biased CASC objective and are superseded. The reduced run uses three seeds, so no comparison is significant. The full run will use 10 seeds for N ≥ 250, a deviation from the protocol. Hyperparameters are not tuned for any method, and no sensitivity analysis has been run. The variant's gain may depend on the particular fallback order.
 - **Construct.** The CoM model uses a rigid-body approximation with a fixed target and dry mass. CASC is a surrogate for retrieval effort with hand-chosen constants (L_arm = 0.75, γ = 2, C_grasp = 2, κ = 0.05, λ = 1) and no sensitivity analysis. Hypervolume depends on the normalisation and the reference point.
 - **External.** Synthetic datasets of rigid cuboids. Real cargo is irregular, soft, and has different retrieval constraints. The model assumes top-down access only.
-- **Reproducibility.** The laptop runs used package versions that differ from those recorded for the committed Phase 5 run (numpy 1.26.4, pandas 2.2.3, pymoo 0.6.1.6, scipy 1.11.4, Python 3.12.7). The runs record their Python and platform. The corrected batched scorer is covered by the repository's test suite on CPU. It has not yet been run on a CUDA device, and its speed has not been measured. The GPU benchmark required `psutil`, which is now listed in the requirements.
+- **Reproducibility.** The laptop runs used package versions that differ from those recorded for the committed Phase 5 run (numpy 1.26.4, pandas 2.2.3, pymoo 0.6.1.6, scipy 1.11.4, Python 3.12.7). The runs record their Python and platform. The corrected batched scorer is covered by the repository's test suite on CPU and was checked for equivalence and scoring-stage speed on a CUDA device (Section 6.4). Whole-run GPU speed has not been measured. The GPU benchmark required `psutil`, which is now listed in the requirements.
 
 ## 9. Limitations and Future Work
 
@@ -197,7 +197,7 @@ We do not model support or gravity, lateral or rear access, or non-EP decoders. 
 
 ## 10. Conclusion
 
-We examined a bi-objective payload packing formulation and its evaluation. Two defects in the earlier evaluation were found and corrected: a batched scorer that mis-scored partially packed layouts, and a significance analysis that compared stochastic runs with a single fixed value. The earlier claims of superiority, GPU speedup and polynomial scaling are withdrawn. In a three-seed matched-budget experiment on SC1, a feasibility-aware variant found feasible packings where plain NSGA-II and random search found few or none, at about twice the decoder cost. That result is suggestive. It is not yet a finding about solution quality, and it will be tested by the full evaluation in Section 5.3.
+We examined a bi-objective payload packing formulation and its evaluation. Two defects in the earlier evaluation were found and corrected: a batched scorer that mis-scored partially packed layouts, and a significance analysis that compared stochastic runs with a single fixed value. The earlier claims of superiority, whole-run GPU speedup and polynomial scaling are withdrawn; a scoring-stage GPU speedup has been measured on a laptop GPU. In a three-seed matched-budget experiment on SC1, a feasibility-aware variant found feasible packings where plain NSGA-II and random search found few or none, at about twice the decoder cost. That result is suggestive. It is not yet a finding about solution quality, and it will be tested by the full evaluation in Section 5.3.
 
 ## Reproducibility Statement
 
