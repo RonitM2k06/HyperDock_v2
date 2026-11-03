@@ -2,91 +2,85 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3120/)
-[![PyTorch CUDA](https://img.shields.io/badge/PyTorch-CUDA_12.1-ee4c2c.svg)](https://pytorch.org/)
 
-**HyperDock V2** is a multi-objective 3D geometry engine built to solve complex payload logistics optimization for top-loading spacecraft modules. It bridges operations research heuristics with deep learning hardware (GPU Tensor Cores) to evaluate structural and topological constraints at massive scale.
+**HyperDock V2** is a research codebase for multi-objective payload packing for top-loading spacecraft modules. A chromosome encodes an item sequence and a rotation per item. A CPU Extreme Point (EP) decoder (Numba) turns it into a packing; a CASC accessibility evaluator and a CoM evaluator score the packing; NSGA-II searches the trade-off between CoM deviation and accessibility. A PyTorch batched CASC evaluator is provided as an alternative to the CPU evaluator.
 
-This repository contains the frozen implementation and experimental harness utilized in our upcoming publication.
+> **Status (read first).** This repository is a research work in progress, not a finished or validated result. The current manuscript's headline claims (NSGA-II superiority, sub-second GPU scaling, unit-level statistics) are **not supported** by the committed data. See:
+> - [`docs/CLAIMS_AUDIT.md`](docs/CLAIMS_AUDIT.md): each manuscript claim checked against the committed data and code.
+> - [`RESEARCH_READINESS.md`](RESEARCH_READINESS.md): the open issue checklist and its status.
+> - [`docs/EXPERIMENTAL_PROTOCOL.md`](docs/EXPERIMENTAL_PROTOCOL.md): what is implemented, datasets, metrics, baselines, and known defects.
 
-## 🚀 Key Features
+## Installation
 
-* **GPU Tensorization of Topological Constraints:** Offloads $O(N^3)$ discrete 3D spatial occlusion ray-casting to continuous, batched boolean PyTorch matrix operations.
-* **Polynomial Scalability:** Evaluates billions of spatial ray-cast intersections across an entire population generation in fractions of a second on an entry-level GPU.
-* **Multi-Objective NSGA-II:** Explores the severe topological trade-off between minimizing Center of Mass (CoM) deviation and maximizing the Container Accessibility Scoring Metric (CASC).
-* **Numba-Accelerated CPU Packing:** Employs an Extreme Point heuristic mathematically isolated on parallel CPU cores to compress physical footprints efficiently.
-
-## 🏗️ Architecture
-HyperDock utilizes an asymmetric distributed evaluation loop:
-1. **CPU Workers (Numba):** Decode sequential evolutionary chromosomes into dense geometric topologies using a JIT-compiled Extreme Point heuristic.
-2. **GPU Engine (PyTorch):** Receives batched bounding-box parameters, broadcasts visibility grids ($[B, N, N, res^2]$), and performs early-stopping transitive Warshall multiplications to compute hierarchical occlusion maps.
-
-## 📦 Installation
-
-Ensure you have Python 3.10+ installed.
+Python 3.12 is the tested version (the `reproducibility/metadata.json` run used 3.12.7). Older versions may work but are untested.
 
 ```bash
-git clone https://github.com/YourOrg/HyperDock.git
-cd HyperDock
+git clone https://github.com/RonitM2k06/HyperDock_v2.git
+cd HyperDock_v2
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**CRITICAL NOTE**: By default, `pip` may install the CPU-only version of PyTorch. To utilize the CASC GPU tensorization, you must forcefully install the CUDA-enabled binary:
+`requirements.txt` lists lower bounds only. For the GPU evaluator, install a CUDA build of PyTorch explicitly, for example:
+
 ```bash
-pip uninstall -y torch torchvision torchaudio
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+pip install torch --index-url https://download.pytorch.org/whl/cu121
 ```
 
-## 🔬 Reproducing the Experiments
+Without CUDA, `CASCv2GPU` and `CoMModelGPU` fall back to CPU tensors. The CPU path (`CASCv2`, `CoMModel`) needs no GPU.
 
-The `experiments/` directory contains the complete harness used for benchmarking the algorithm against deterministic baselines (First-Fit, Best-Fit Decreasing) across 12 synthetic datasets ($N \in \{50, 100, 250, 500\}$).
+## Running the experiments
 
-1. **Execute Phase 5 Benchmark:**
-   ```bash
-   python experiments/phase5_runner.py
-   ```
-   *Note: This will execute 360 NSGA-II runs and output `results.csv` and `convergence.csv`.*
+The full Phase 5 harness executes 12 datasets × 30 seeds of NSGA-II (360 runs) plus 36 deterministic baseline constructions. Each NSGA-II run took on average about 274 s, up to about 1,000 s, on the committed machine, so the full run takes several hours even with 4 workers.
 
-2. **Generate Statistical Analysis (Phase 6):**
-   ```bash
-   python experiments/phase6_statistics.py
-   ```
-   *Note: Min-max normalizes the objective space and computes Hypervolume, IGD, Spacing, and Wilcoxon/Cliff's Delta tables in `experiments/tables/`.*
+```bash
+python experiments/phase5_runner.py      # -> experiments/results.csv, convergence.csv, pareto_fronts/
+python experiments/phase6_statistics.py  # -> experiments/tables/ (HV, IGD, spread, spacing, tests)
+python experiments/statistics_runner.py  # -> experiments/statistical_tests.csv (dataset-median tests)
+python experiments/figures_runner.py     # -> experiments/figures/
+```
 
-3. **Generate Publication Figures (Phase 8):**
-   ```bash
-   python experiments/figures_runner.py
-   ```
-   *Note: Outputs 600 DPI IEEE-styled Pareto fronts, convergence curves, and runtime scaling plots to `experiments/figures/`.*
+Notes:
+- Phase 5 uses fixed seeds 1–30. Population and generation counts are set in `run_nsga2` (see the protocol document). They are **not** the 100 × 360 described in the earlier manuscript draft.
+- `phase6_statistics.py` and `statistics_runner.py` implement different statistical tests on the same data and give different conclusions. Treat both as provisional until the statistical design is fixed (see `RESEARCH_READINESS.md`).
+- `experiments/phase7_ablation.py` is an empty placeholder. `experiments/ablation_runner.py` exists but has no committed outputs.
 
-## 📂 Repository Structure
+## Tests
+
+```bash
+pytest tests -q
+```
+
+The pytest files cover the operators, the CoM and CASC CPU evaluators, and some constraint-dominance logic. The CPU-vs-GPU equivalence check is a standalone script, not a pytest test:
+
+```bash
+python tests/validate_gpu.py   # requires a PyTorch install; compares CPU and GPU CASC/CoM on random layouts
+```
+
+The test suite and the GPU equivalence script have **not** been executed in the current revision. Their pass/fail status is therefore unknown.
+
+## Repository structure
+
 ```text
-HyperDock/
-│
-├── core/                   # Physics engine and metric evaluation modules
-│   ├── placement/          # Numba CPU Extreme Point Decoder
-│   └── metrics/            # PyTorch CUDA CASC & CoM Evaluators
-│
-├── optimization/           # Evolutionary algorithm framework
-│   └── nsga2/              # Custom NSGA-II implementation for HyperDock
-│
-├── experiments/            # Benchmark scripts and dataset generation
-│   ├── phase5_runner.py    # Main experimental harness
-│   ├── phase6_statistics.py# Statistical analysis engine
-│   └── figures_runner.py   # Publication figure generator
-│
-└── tests/                  # CPU vs GPU mathematical equivalence tests
+HyperDock_v2/
+├── core/
+│   ├── placement/        # Extreme Point decoder (Numba), rotation engine, FF/BFD baselines
+│   ├── metrics/          # CASC (CPU, Numba) and CASC/CoM GPU evaluators (PyTorch)
+│   └── benchmarks/       # Dataset generator and validator
+├── optimization/
+│   └── nsga2/            # pymoo problem wrappers (CPU and GPU-hybrid), operators
+├── experiments/          # Phase runners, statistics, figures, committed results
+├── datasets/hyperdock_bench/   # 12 synthetic JSON datasets (N in {50,100,250,500}, SC1-SC3)
+├── tests/                # pytest files and a standalone CPU/GPU check script
+├── frontend/             # Flask front end (not part of the research pipeline; not reviewed)
+├── docs/                 # Claims audit and experimental protocol
+└── manuscript.md         # Draft manuscript (contains claims under correction; see docs/CLAIMS_AUDIT.md)
 ```
 
-## 📝 Citation
-If you use HyperDock V2 in your research, please cite:
-```bibtex
-@article{HyperDock2026,
-  title={GPU Tensorization of Topological Constraints for Multi-Objective Spacecraft Payload Logistics},
-  author={Author Name},
-  journal={Upcoming Publication},
-  year={2026}
-}
-```
+## Citation
 
-## ⚖️ License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Please do not cite this repository as a finished result until the open items in `RESEARCH_READINESS.md` are resolved. For a citation to the code alone, use `CITATION.cff` after the author fields are completed (they currently contain placeholders).
+
+## License
+
+MIT. See [LICENSE](LICENSE).
