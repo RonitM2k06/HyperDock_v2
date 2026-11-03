@@ -11,7 +11,7 @@ def test_chromosome_validity():
         n_items = 5
         n_var = 10
         
-    sampler = CargoSampling()
+    sampler = CargoSampling(n_items=DummyProblem.n_items)
     X = sampler._do(DummyProblem(), 10)
     
     for x in X:
@@ -27,7 +27,7 @@ def test_orientation_bounds():
         n_items = 5
         n_var = 10
         
-    sampler = CargoSampling()
+    sampler = CargoSampling(n_items=DummyProblem.n_items)
     X = sampler._do(DummyProblem(), 100)
     
     orientations = X[:, 5:]
@@ -55,7 +55,7 @@ def test_pareto_sorting():
     assert set(fronts[1]) == {1}
 
 def test_penalty_activation():
-    """Test that penalties correctly dominate the objective when items are unpacked."""
+    """Unplaced items must register as constraint violations (G > 0), not as objective values."""
     items = [
         {"item_id": "1", "dimensions_wdh_meters": [1.0, 1.0, 1.0], "mass_kg": 5000.0},
         {"item_id": "2", "dimensions_wdh_meters": [1.0, 1.0, 1.0], "mass_kg": 5000.0} # Too big for container
@@ -67,23 +67,19 @@ def test_penalty_activation():
     out = {}
     problem._evaluate(x, out)
     
-    f1, f2, f3 = out["F"]
+    # Current design: two objectives and two inequality constraints (g1 = unplaced volume, g2 = unplaced count)
+    assert len(out["F"]) == 2
+    assert len(out["G"]) == 2
+    g1, g2 = out["G"]
     
-    # f1 = unplaced volume = 1.0 (item 2)
-    assert f1 == 1.0
-    
-    # f2 = delta_com + lambda * unplaced_mass
-    # lambda is 100.0, unplaced mass is 5000.0
-    # Expected f2 > 500,000
-    assert f2 >= 500000.0
-    
-    # f3 = -casc + eta * unplaced_count
-    # eta is 100.0, unpacked = 1
-    # Expected f3 > 90.0
-    assert f3 >= 90.0
+    # One item (volume 1.0) cannot be placed
+    assert g1 == 1.0
+    assert g2 == 1
+    assert np.all(np.array(out["G"]) > 0)  # infeasible
+    assert np.all(np.isfinite(np.array(out["F"])))
 
 def test_feasible_solution_scoring():
-    """Test that a perfectly feasible solution has ZERO penalties."""
+    """A fully packed layout has no constraint violation and finite objectives."""
     items = [
         {"item_id": "1", "dimensions_wdh_meters": [0.5, 0.5, 0.5], "mass_kg": 10.0}
     ]
@@ -93,13 +89,13 @@ def test_feasible_solution_scoring():
     out = {}
     problem._evaluate(x, out)
     
-    f1, f2, f3 = out["F"]
+    assert len(out["F"]) == 2
     
-    # f1 = 0.0 unplaced volume
-    assert f1 == 0.0
+    # No unplaced volume or count: feasible
+    assert np.all(np.array(out["G"]) <= 0)
     
-    # f2 = raw com deviation, should be very small, well under 100
-    assert f2 < 100.0
-    
-    # f3 = raw CASC (negative), should be between 0 and -1.0
-    assert f3 <= 0.0 and f3 >= -1.0
+    f1, f2 = out["F"]
+    # f1 = CoM deviation, should be well under 100 m for a single small item
+    assert 0.0 <= f1 < 100.0
+    # f2 = -mean CASC, so it lies in [-1, 0]
+    assert -1.0 <= f2 <= 0.0
