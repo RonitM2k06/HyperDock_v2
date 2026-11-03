@@ -9,3 +9,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 archive/
+
+# Generated experiment outputs (reproducible via experiments/matched_budget_runner.py)
+experiments/reduced_sc1/
