@@ -95,3 +95,18 @@ Current assessment: the project is **not yet research-paper-ready**. The complet
 | `RESEARCH_READINESS.md` | New (this file) | — |
 
 No source code, data, or result files were modified.
+
+## Update 2026-11-04
+
+| Item | Status | Evidence |
+|---|---|---|
+| Feasibility-aware variant | Implemented and tested | `optimization/nsga2/feasibility.py`; `tests/test_feasibility_variant.py` |
+| Matched-budget harness | Implemented; reduced run executed | `experiments/matched_budget_runner.py`; reduced results in manuscript Section 6.5 |
+| Batched GPU scorer correctness | Fixed; regression tests added | commit e1d56c2; `tests/test_casc_gpu_mask.py` |
+| Scoring-stage GPU benchmark | Implemented; not yet run on the GPU | `experiments/benchmark_gpu_v2.py` |
+| Full matched-budget run (12 datasets) | **Not executed** | Planned in manuscript Section 5.3 (about 40–45 h on the laptop) |
+| Heuristic baselines in matched-budget harness | **Not executed** | Manuscript Section 5.6, item 3 |
+| Committed Phase 5 results | **Superseded** (scorer defect) | `docs/CLAIMS_AUDIT.md` update |
+| Manuscript | Version 4 draft; full-run results pending | `docs/paper/manuscript_v3_draft.md` |
+| Author information | Placeholder; must be supplied by authors | Manuscript header and author note |
+| Related work | Two sources verified; systematic search pending | Manuscript Section 2 |

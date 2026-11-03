@@ -59,3 +59,10 @@ Status codes: **Supported** (evidence matches), **Partly supported**, **Contradi
 ## Summary
 
 Of the 32 items, the majority of substantive claims are **contradicted** or **unverified** by the repository itself. The implementation (decoder, CASC, CoM, NSGA-II wrapper, baselines, harness, seeds) is real and mostly matches its description, but the manuscript's central results, complexity and speedup claims, and statistical claims need to be rewritten or supported by new experiments. No manuscript text has been changed by this audit; corrections should follow the plan in `RESEARCH_READINESS.md`.
+
+## Update 2026-11-04: scorer defect and superseded results
+
+- **Batched GPU scorer padding defect (new).** `CASCv2GPU` scored unplaced-item padding rows as real items at the origin. Layouts with fewer packed items than N had biased CASC (up to about 0.1 on SC1-50). CoM was unaffected. Fixed with a validity mask (commit e1d56c2). Regression tests: `tests/test_casc_gpu_mask.py`.
+- **Committed Phase 5 results (`experiments/results.csv`, `convergence.csv`, `tables/`) are superseded.** `phase5_runner.py` used the unmasked batched path, so their f2 (CASC) values are biased for infeasible layouts. Any claim that depends on them (manuscript Sections 6.1–6.3 and the CASC dataset-median result) is withdrawn until regenerated.
+- **Earlier GPU benchmark (`experiments/benchmark_gpu.py`) is invalid.** It timed packing and scoring together, included CUDA start-up, and printed PASSED when the comparison was empty. Replaced by `experiments/benchmark_gpu_v2.py`, which is not yet run on the GPU.
+- **Reduced matched-budget run (3 seeds, SC1).** Uses the CPU reference path, so it is unaffected by the defect. Results are in manuscript Section 6.5. No comparison is significant.
