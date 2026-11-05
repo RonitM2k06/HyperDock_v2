@@ -95,9 +95,19 @@ def main():
         ds_runs = [r for r in runs if r["meta"]["dataset"] == ds]
         pooled = np.vstack([r["front"] for r in ds_runs if len(r["front"])] or [np.zeros((0, 2))])
         if len(pooled) == 0:
+            # No feasible point in any run of this dataset: every run has HV 0 and IGD undefined.
+            # Keep the same columns as the main branch so runtime and decoder counts are not lost.
             for r in ds_runs:
-                rows.append({"dataset": ds, "method": r["meta"]["method"], "seed": r["meta"]["seed"],
-                             "HV": 0.0, "IGD": float("nan"), "feasible": False})
+                m = r["meta"]
+                rows.append({
+                    "dataset": ds, "method": m["method"], "seed": m["seed"],
+                    "n_items": m["n_items"], "n_eval": m["n_eval"], "decodes": m["decodes"],
+                    "runtime_s": m["runtime_s"], "feasible_evaluations": r["n_feasible_eval"],
+                    "feasible_eval_rate": r["n_feasible_eval"] / max(1, len(r["F"])),
+                    "feasible_front_size": 0, "feasible": False,
+                    "HV": 0.0, "IGD": float("nan"),
+                    "best_com_dev_feasible": float("nan"), "best_casc_feasible": float("nan"),
+                })
             continue
         ref_front = nondominated(pooled)
         f_min = pooled.min(axis=0)
