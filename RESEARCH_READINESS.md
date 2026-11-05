@@ -115,3 +115,18 @@ No source code, data, or result files were modified.
 
 - `experiments/benchmark_gpu_v2.py` on an NVIDIA GeForce RTX 4050 Laptop GPU (torch 2.11.0+cu128), SC1-100: scoring speedups of 6.4x, 5.5x and 4.1x for 50, 100 and 250 layouts (medians; warm-up 2; 5 repeats; CUDA synchronised). Per-layout CASC and CoM agree with the CPU reference to 4.1e-8 or better. Peak GPU memory 17–55 MB.
 - This measures scoring only. Whole-run GPU speed is not measured.
+
+## Update 2026-11-05: full evaluation complete
+
+| Item | Status |
+|---|---|
+| Full matched-budget run (720 runs, 12 datasets) | Done (laptop) |
+| Heuristic baselines in the same reference front | Done; laptop and cloud results identical |
+| Holm correction | Done; degenerate SC3 comparisons excluded from the family |
+| Sensitivity to CASC constants and CoM target | Done (re-scoring of fronts) |
+| Dataset generator documented and reproducibility checked | Done (`docs/DATASETS.md`) |
+| Related work with verified references | Done; a few page/volume details flagged for final check |
+| Figures | Done (`docs/paper/figures`) |
+| Ablation (6 modes × 2 datasets × 10 seeds) | Running on laptop |
+| Clean sequential runtime timing | Not done |
+| Author information | Needs the authors |

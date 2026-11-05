@@ -111,3 +111,40 @@ These are facts about the committed code and data, not hypotheses.
 5. `pytest tests -q`.
 
 Steps 2–5 have **not** been re-executed since the repository snapshot. Results reported in this document are recomputed from the committed CSVs, not from new runs.
+
+## 8. Protocol as executed for manuscript v5 (2026-11-05)
+
+This section supersedes Sections 3.2, 4 and 7 for the results reported in
+`docs/paper/manuscript_v5_draft.md`.
+
+- **Methods.** NSGA-II, the feasibility-aware variant (`optimization/nsga2/feasibility.py`),
+  random search with NSGA-II's evaluation count, and the single-construction baselines
+  FF, BFD-V and BFD-P (`experiments/heuristic_baselines.py`). The baselines try all six
+  rotations at each extreme point, whereas NSGA-II decodes one orientation per item.
+- **Budget and seeds.** Population/generations 100/100 for N ≤ 100 and 50/50 for N ≥ 250.
+  Seeds 1–30 for N ∈ {50, 100}, 1–10 for N ∈ {250, 500}. The reduction from 30 seeds at
+  N ≥ 250 is a stated deviation (compute).
+- **Scorer.** All results use the CPU reference scorer (`CargoProblem`). The batched GPU
+  scorer is masked (`core/metrics/casc_gpu.py`) and is used only for timing.
+- **Metrics.** Archive = every evaluated chromosome. Pooled feasible reference front per
+  dataset (all methods, all seeds), min-max normalisation, HV reference point (1.1, 1.1),
+  IGD to the pooled front. Runs with no feasible point have HV 0.
+- **Statistics.** Paired Wilcoxon signed-rank across seeds, Cliff's δ, bootstrap 95% CI
+  (10,000 resamples, seed 12345). Holm correction across datasets within each comparison;
+  comparisons in which both methods have HV 0 in every run are excluded from the family.
+- **Coordinate convention.** z is depth from the access face (z = 0); see `docs/DATASETS.md`.
+- **Sensitivity.** `experiments/sensitivity_rescore.py`: CASC constants × 0.5 and × 2, and a
+  container-centred CoM target, applied by re-scoring the original fronts.
+- **Ablation.** `experiments/ablation_study.py`, SC1-100 and SC2-100, seeds 1–10.
+
+Reproduction:
+
+```
+python experiments/matched_budget_runner.py --datasets <SC1/SC2/SC3 × 50,100> --seeds 1 ... 30 --out experiments/full_matched
+python experiments/matched_budget_runner.py --datasets <SC1/SC2/SC3 × 250,500> --seeds 1 ... 10 --out experiments/full_matched
+python experiments/heuristic_baselines.py --out experiments/full_matched
+python experiments/matched_budget_analysis.py --dir experiments/full_matched
+python experiments/sensitivity_rescore.py --fronts docs/paper/data/fronts_full_matched.npz --out experiments/sensitivity
+python experiments/ablation_study.py --datasets SC1-100 SC2-100 --seeds 1 2 3 4 5 6 7 8 9 10 --workers 12
+python experiments/paper_figures.py --metrics docs/paper/data/per_run_metrics.csv --fronts docs/paper/data/fronts_full_matched.npz --baselines experiments/full_matched
+```

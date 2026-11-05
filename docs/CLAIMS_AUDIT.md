@@ -66,3 +66,12 @@ Of the 32 items, the majority of substantive claims are **contradicted** or **un
 - **Committed Phase 5 results (`experiments/results.csv`, `convergence.csv`, `tables/`) are superseded.** `phase5_runner.py` used the unmasked batched path, so their f2 (CASC) values are biased for infeasible layouts. Any claim that depends on them (manuscript Sections 6.1–6.3 and the CASC dataset-median result) is withdrawn until regenerated.
 - **Earlier GPU benchmark (`experiments/benchmark_gpu.py`) is invalid.** It timed packing and scoring together, included CUDA start-up, and printed PASSED when the comparison was empty. Replaced by `experiments/benchmark_gpu_v2.py`, which is not yet run on the GPU.
 - **Reduced matched-budget run (3 seeds, SC1).** Uses the CPU reference path, so it is unaffected by the defect. Results are in manuscript Section 6.5. No comparison is significant.
+
+## Update 2026-11-05: claims in manuscript v5
+
+- Variant vs NSGA-II hypervolume: higher on all 8 SC1/SC2 datasets; Holm-significant on 7 (SC2-100 marginal at 0.0496), not on SC1-250. Source: laptop `paired_tests.csv`, recomputed with the corrected Holm family.
+- Variant vs BFD-V: higher HV on all 5 datasets where BFD-V is feasible. BFD-V is a single run, so no test is claimed.
+- SC3: no feasible packing by any method; reported as a finding, not as instance infeasibility.
+- Sensitivity: direction unchanged under all CASC-constant changes; one dataset (SC2-50) reverses with a container-centred CoM target.
+- GPU: scoring-stage speedup only (4.1–6.4×). No whole-run speedup is claimed.
+- Earlier Holm values (computed with SC3 in the family) are superseded by the corrected family. They are reported in the manuscript as the conservative check.

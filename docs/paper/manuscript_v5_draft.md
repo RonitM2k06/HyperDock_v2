@@ -46,7 +46,9 @@ A solution is a permutation σ of the N items and an orientation vector o ∈ {1
 
 ### 3.2 Decoding
 
-The EP decoder places items in the order σ. Each item is tried at the extreme points in order (sorted by z, then y, then x) with its chosen orientation. An item is placed if it lies within the container and overlaps no placed item. Items that cannot be placed are counted as unplaced. **The decoder does not enforce support: an item may be placed at any height with nothing beneath it.** We treat this as a stated modelling limitation rather than a physical result.
+The EP decoder places items in the order σ. Each item is tried at the extreme points in order (sorted by z, then y, then x) with its chosen orientation. An item is placed if it lies within the container and overlaps no placed item. Items that cannot be placed are counted as unplaced. **Coordinate convention.** The access face is the z = 0 face, and z is depth from that face. The CASC model (Section 3.4) uses this convention, so items nearer the access face block deeper items, and reach cost grows with z. Because extreme points are sorted by z first, the decoder fills the container from the access face inward. The dataset files also carry an `open_face_normal` field, which neither the decoder nor the objectives use (see `docs/DATASETS.md`).
+
+**The decoder does not enforce contact.** An item can be placed with a gap between it and the items nearer the access face. Section 6.9 tests a contact constraint as an ablation. Launch-load restraint and stability are not modelled.
 
 ### 3.3 Constraints
 
@@ -110,17 +112,15 @@ Objectives are min-max normalised on the pooled feasible points of all methods o
 
 ### 5.5 Statistical analysis
 
-Paired comparisons use seeds as the pairing unit. Wilcoxon signed-rank (two-sided) and Cliff's δ are computed per dataset, with bootstrap 95% confidence intervals of the mean (10,000 resamples, fixed RNG seed). With n seeds, the smallest achievable two-sided Wilcoxon p-value is 2/2ⁿ: 0.25 for n = 3, 0.002 for n = 10 and 1.9 × 10⁻⁹ for n = 30. Holm step-down correction across the twelve datasets is implemented in `experiments/matched_budget_analysis.py` (column `wilcoxon_p_holm`). Holm-adjusted values for the full run are reported in Table 6.6 alongside the uncorrected values.
+Paired comparisons use seeds as the pairing unit. Wilcoxon signed-rank (two-sided) and Cliff's δ are computed per dataset, with bootstrap 95% confidence intervals of the mean (10,000 resamples, fixed RNG seed). With n seeds, the smallest achievable two-sided Wilcoxon p-value is 2/2ⁿ: 0.25 for n = 3, 0.002 for n = 10 and 1.9 × 10⁻⁹ for n = 30. Holm step-down correction across datasets is implemented in `experiments/matched_budget_analysis.py` (column `wilcoxon_p_holm`). The Holm family contains the datasets on which at least one of the two compared methods has a feasible point. On SC3 every method has hypervolume 0 in every run, so no test is possible there, and SC3 is excluded. For variant against NSGA-II the family is the eight SC1 and SC2 datasets. As a conservative check we also report the correction with all twelve datasets in the family.
 
 Two earlier analyses are superseded. Analysis A (a Wilcoxon test of 30 stochastic hypervolumes against one fixed baseline value) measures whether all runs exceed that value, not whether the methods differ. Analysis B (Wilcoxon tests on twelve dataset medians) has too few values to be decisive.
 
 ### 5.6 Pending experiments **[PENDING]**
 
-1. Regenerated figures and tables from the full run, replacing the superseded Phase 5 outputs.
-2. Ablations: orientation off; each CASC term; the support constraint.
-3. CoM and CASC weight sensitivity.
-4. Clean sequential runtime measurement. The full-run timings were taken under concurrent load.
-5. Whole-run GPU timing including packing. Only scoring-stage timing is measured (Section 6.4).
+1. Clean sequential runtime measurement. The full-run timings were taken under concurrent load.
+2. Whole-run GPU timing including packing. Only scoring-stage timing is measured (Section 6.4).
+3. Seed-replicated heuristic baselines (for example, randomised tie-breaking), which would allow a statistical test against BFD-V.
 
 ## 6. Results
 
@@ -164,18 +164,18 @@ Retained from version 4 as a pilot. Hypervolume is per dataset against a referen
 
 ### 6.6 Full matched-budget run (executed, 12 datasets)
 
-Table 6.6 reports the full run for NSGA-II and the feasibility-aware variant. Hypervolume is per dataset, against the reference front pooled over the methods and seeds of that dataset, with the normalisation of Section 5.4. "Feasible runs" is the number of runs with at least one feasible evaluation out of the number of seeds. Random search found no feasible packing on any dataset. The p-values are two-sided Wilcoxon tests of the variant against NSGA-II across seeds, uncorrected and Holm-adjusted across the eight datasets with a feasible packing. Holm adjustment is applied within each comparison family, as implemented in the analysis script. The SC3 datasets are shown in the same CSVs but are all zero and have p = 1.
+Table 6.6 reports the full run for NSGA-II and the feasibility-aware variant. Hypervolume is per dataset, against the reference front pooled over the methods and seeds of that dataset, with the normalisation of Section 5.4. "Feasible runs" is the number of runs with at least one feasible evaluation out of the number of seeds. Random search found no feasible packing on any dataset. The p-values are two-sided Wilcoxon tests of the variant against NSGA-II across seeds, uncorrected and Holm-adjusted across the eight SC1 and SC2 datasets (Section 5.5). Figure 1 shows the feasible-run rates and Figure 2 the per-run hypervolumes.
 
 | Dataset | Seeds | NSGA-II HV mean ± SD | Variant HV mean ± SD | NSGA-II feasible runs | Variant feasible runs | p (uncorrected) | p (Holm) |
 |---|---|---|---|---|---|---|---|
-| SC1-50 | 30 | 0.09 ± 0.16 | 0.35 ± 0.21 | 9 / 30 | 26 / 30 | 9.9 × 10⁻⁵ | 0.0011 |
-| SC2-50 | 30 | 0.25 ± 0.24 | 0.41 ± 0.15 | 18 / 30 | 30 / 30 | 0.007 | 0.050 |
-| SC1-100 | 30 | 0 | 0.56 ± 0.14 | 0 / 30 | 30 / 30 | 1.9 × 10⁻⁹ | 2.2 × 10⁻⁸ |
-| SC2-100 | 30 | 0.25 ± 0.26 | 0.38 ± 0.16 | 16 / 30 | 28 / 30 | 0.025 | 0.149 |
-| SC1-250 | 10 | 0.09 ± 0.29 | 0.41 ± 0.08 | 1 / 10 | 10 / 10 | 0.084 | 0.420 |
-| SC2-250 | 10 | 0 | 0.66 ± 0.21 | 0 / 10 | 10 / 10 | 0.002 | 0.020 |
-| SC1-500 | 10 | 0 | 0.83 ± 0.09 | 0 / 10 | 10 / 10 | 0.002 | 0.020 |
-| SC2-500 | 10 | 0 | 0.52 ± 0.22 | 0 / 10 | 10 / 10 | 0.002 | 0.020 |
+| SC1-50 | 30 | 0.09 ± 0.16 | 0.35 ± 0.21 | 9 / 30 | 26 / 30 | 9.9 × 10⁻⁵ | 7.0 × 10⁻⁴ |
+| SC2-50 | 30 | 0.25 ± 0.24 | 0.41 ± 0.15 | 18 / 30 | 30 / 30 | 0.007 | 0.021 |
+| SC1-100 | 30 | 0 | 0.56 ± 0.14 | 0 / 30 | 30 / 30 | 1.9 × 10⁻⁹ | 1.5 × 10⁻⁸ |
+| SC2-100 | 30 | 0.25 ± 0.26 | 0.38 ± 0.16 | 16 / 30 | 28 / 30 | 0.025 | 0.0496 |
+| SC1-250 | 10 | 0.09 ± 0.29 | 0.41 ± 0.08 | 1 / 10 | 10 / 10 | 0.084 | 0.084 |
+| SC2-250 | 10 | 0 | 0.66 ± 0.21 | 0 / 10 | 10 / 10 | 0.002 | 0.012 |
+| SC1-500 | 10 | 0 | 0.83 ± 0.09 | 0 / 10 | 10 / 10 | 0.002 | 0.012 |
+| SC2-500 | 10 | 0 | 0.52 ± 0.22 | 0 / 10 | 10 / 10 | 0.002 | 0.012 |
 
 SC3 (all four sizes) produced no feasible packing for any method in any run, including the variant. Its hypervolume is 0 everywhere and is not compared.
 
@@ -185,9 +185,10 @@ Reading the table requires care.
 - **The variant's fallback is a volume-ordered decode.** Section 4.4 describes the fallback. Its feasibility gain therefore comes from the decode order as much as from the search. Section 6.7 shows that a single deterministic volume-ordered construction (BFD-V) is also feasible on five of the twelve datasets, and the variant's hypervolume exceeds BFD-V's on each of those five.
 - **Budgets are matched by evaluations, not computation.** The variant makes up to two decoder calls per evaluation. Its runtime was about 1.6 to 1.7 times NSGA-II's under concurrent load.
 - **The random baseline is weak.** It produced no feasible packing on any dataset, so it does not represent a competitive alternative.
-- **Holm correction.** After Holm adjustment, the variant's advantage over NSGA-II remains significant at α = 0.05 on six of eight datasets (SC1-50, SC1-100, SC1-500, SC2-250, SC2-500, and SC2-50, which is marginal at 0.050). It is not significant on SC2-100 (0.149) or SC1-250 (0.420).
+- **Holm correction.** After Holm adjustment, the variant's advantage over NSGA-II is significant at α = 0.05 on seven of eight datasets. SC2-100 is marginal (0.0496), and SC1-250 is not significant (0.084), with only one feasible NSGA-II run among ten seeds there. With all twelve datasets in the Holm family (the conservative check), six of eight remain significant: SC2-100 rises to 0.149 and SC1-250 to 0.420.
+- **The fronts differ in shape, not only in size.** On SC2-50, where both methods are often feasible, NSGA-II's feasible fronts reach higher mean CASC (up to about 0.35) than the variant's (up to about 0.29). The variant's fronts extend further toward low CoM deviation (Figure 3). The variant's hypervolume gain there comes from CoM range and from feasibility, not from dominating NSGA-II everywhere.
 
-### 6.7 Deterministic heuristic baselines (cloud run, feasibility only)
+### 6.7 Deterministic heuristic baselines
 
 Each baseline is one deterministic construction, so each dataset has one run. The table reports the number of packed items and feasibility, produced by `experiments/heuristic_baselines.py`. The hypervolume column is computed on the laptop reference front, pooled with the NSGA-II and variant runs. Hypervolume is shown for BFD-V only where it is feasible; the other baselines have hypervolume 0. Because each baseline is a single run, no statistical test is possible.
 
@@ -208,6 +209,31 @@ Each baseline is one deterministic construction, so each dataset has one run. Th
 
 Each baseline tries all six rotations at each extreme point. NSGA-II fixes one orientation per item, so the two decodes are not identical. Two observations follow. First, the variant is feasible on SC1-50 in 26 of 30 seeds, while no deterministic baseline is feasible there. Second, BFD-V is feasible on SC1-100, SC1-250, SC1-500, SC2-250 and SC2-500, where NSGA-II's feasible-run rate is 0 or small. On these five datasets the variant's mean hypervolume is higher than BFD-V's: 0.563 vs 0.087 (SC1-100), 0.408 vs 0.255 (SC1-250), 0.831 vs 0.116 (SC1-500), 0.664 vs 0.055 (SC2-250) and 0.520 vs 0.259 (SC2-500). A simple constructive baseline is therefore a strong competitor on feasibility, but the variant's hypervolume gain is not explained by feasibility alone.
 
+### 6.8 Sensitivity to the CASC constants and the CoM target
+
+The CASC constants (L_arm, λ, C_grasp, κ) and the absolute CoM target were chosen by hand. To test whether the comparison depends on them, every point on the feasible front of every NSGA-II and variant run was re-decoded and re-scored under each of nine changed settings. Each constant was halved and doubled in turn. In a separate setting, the CoM target and the dry-mass centre were moved to the container's geometric centre. BFD-V was re-run under each setting. Hypervolume and the tests were then recomputed as in Section 5.5 (`experiments/sensitivity_rescore.py`). With the original constants, this procedure reproduces the hypervolume means and p-values of Table 6.6 exactly. That is a check that the re-decoding in a different environment matches the laptop run.
+
+| Setting | Variant higher mean HV (of 8) | Significant, Holm α = 0.05 (of 8) | Variant above BFD-V (of 5 where BFD-V is feasible) |
+|---|---|---|---|
+| Original constants | 8 | 7 | 5 |
+| L_arm × 0.5 / × 2 | 8 / 8 | 6 / 7 | 5 / 5 |
+| λ_occ × 0.5 / × 2 | 8 / 8 | 7 / 7 | 5 / 5 |
+| C_grasp × 0.5 / × 2 | 8 / 8 | 6 / 7 | 5 / 5 |
+| κ × 0.5 / × 2 | 8 / 8 | 7 / 7 | 5 / 5 |
+| CoM target at container centre | 7 | 6 | 5 |
+
+The direction of the comparison does not change under any CASC-constant setting. Moving the CoM target reverses one dataset: on SC2-50 NSGA-II's mean hypervolume becomes slightly higher (0.352 against 0.337, p = 0.95). This is consistent with the front-shape observation in Section 6.6. Where both methods are feasible, the ranking depends on how the CoM objective is defined. This analysis re-scores only the points that were on each run's original front. Under a changed objective other evaluated points could join the front. The analysis therefore tests the robustness of the evaluation, not a re-optimisation.
+
+### 6.9 Ablation of the variant
+
+**[RESULTS PENDING: laptop run in progress]** Six ablations of the variant were run on SC1-100 and SC2-100 with seeds 1–10 (`experiments/ablation_study.py`), each changing one component:
+- no orientation search;
+- a fallback decode in random rather than volume order;
+- CASC optimised without its reach, occlusion or extraction term;
+- a contact constraint (an item away from the access face must have at least half its footprint on items directly nearer the access face).
+
+The front of each run is re-scored with the full objective and compared with the full variant on the same seeds.
+
 ## 7. Discussion
 
 The central result is methodological. The search output of a packing optimiser is often not a valid packing, and a hypervolume comparison that does not condition on feasibility rewards the method that finds any feasible point. On the full run, plain NSGA-II is infeasible on most datasets, and the variant finds feasible packings in nearly every seed. The variant's advantage in feasibility, however, is plausibly a consequence of its volume-ordered fallback. A deterministic volume-ordered construction is also feasible on several datasets. Any future comparison must match feasibility, evaluation budget and computation, and must include the deterministic constructions, before the variant's contribution is interpreted.
@@ -216,26 +242,26 @@ A second methodological result concerns implementation. A batched evaluator pass
 
 The feasibility-aware variant is a simple fallback decode, not a validated method. Its gain is in feasibility, and its cost is decoder work. Its hypervolume exceeds that of the deterministic volume-ordered construction on every dataset where that construction is feasible (Section 6.7). Whether the improvement holds under a seed-replicated baseline, a different reference front or a validated retrieval model is not yet known.
 
-The decoder design, which allows floating items, may bias the accessibility objective toward sparse, high placements. The support-constraint ablation that would separate this effect from the search effect is still pending **[PENDING, item 4]**.
+The decoder does not enforce contact, so layouts may contain gaps along the access axis. The contact ablation (Section 6.9) measures how much of the result depends on this freedom.
 
 SC3 produced no feasible packing by any method. Because the cargo-to-container volume ratio is 0.96, it may be infeasible for this decoder rather than for the search. Whether any full packing exists has not been established.
 
 ## 8. Threats to Validity
 
-- **Internal.** The committed Phase 5 results used a biased CASC objective and are superseded. The full run uses 10 seeds for N ≥ 250 rather than the 30 in the protocol. Hypervolume p-values are uncorrected for the twelve datasets. The full run ran with concurrent workloads, so its timings are not clean. Hyperparameters are not tuned for any method, and no sensitivity analysis has been run. The variant's gain may depend on the particular fallback order, and the deterministic baselines were not yet run against the same reference front.
-- **Construct.** The CoM model uses a rigid-body approximation with a fixed target and dry mass. CASC is a surrogate for retrieval effort with hand-chosen constants (L_arm = 0.75, γ = 2, C_grasp = 2, κ = 0.05, λ = 1) and no sensitivity analysis. Hypervolume depends on the normalisation and the reference point, and feasibility-conditioned hypervolume rewards finding any feasible point.
+- **Internal.** The committed Phase 5 results used a biased CASC objective and are superseded. The full run uses 10 seeds for N ≥ 250 rather than the 30 in the protocol. Holm correction is applied across the eight informative datasets, and the conclusion is weaker under the conservative twelve-dataset family (Section 6.6). The full run ran with concurrent workloads, so its timings are not clean. Hyperparameters are not tuned for any method. The objective constants were tested only by re-scoring (Section 6.8). The variant's gain may depend on the particular fallback order, and the deterministic baselines are single runs.
+- **Construct.** The CoM model uses a rigid-body approximation with a fixed target and dry mass. CASC is a surrogate for retrieval effort with hand-chosen constants (L_arm = 0.75, γ = 2, C_grasp = 2, κ = 0.05, λ = 1). The comparison's direction is robust to halving or doubling them (Section 6.8), but the surrogate is not validated. Hypervolume depends on the normalisation and the reference point, and feasibility-conditioned hypervolume rewards finding any feasible point.
 - **External.** Synthetic datasets of rigid cuboids. Real cargo is irregular, soft, and has different retrieval constraints. The model assumes top-down access only.
-- **Reproducibility.** The laptop runs used package versions that differ from those recorded for the committed Phase 5 run (numpy 1.26.4, pandas 2.2.3, pymoo 0.6.1.6, scipy 1.11.4, Python 3.12.7). The runs record their Python and platform. The deterministic baselines were run in a different cloud environment and have not been run on the laptop. The corrected batched scorer is covered by the repository's test suite and was checked for equivalence and scoring-stage speed on a CUDA device (Section 6.4). Whole-run GPU speed has not been measured.
+- **Reproducibility.** The laptop runs used package versions that differ from those recorded for the committed Phase 5 run (numpy 1.26.4, pandas 2.2.3, pymoo 0.6.1.6, scipy 1.11.4, Python 3.12.7). The runs record their Python and platform. The deterministic baselines were run on both the cloud environment and the laptop with identical results. Re-decoding the laptop fronts in the cloud reproduces their objective values exactly. The corrected batched scorer is covered by the repository's test suite and was checked for equivalence and scoring-stage speed on a CUDA device (Section 6.4). Whole-run GPU speed has not been measured.
 
 ## 9. Limitations and Future Work
 
-We do not model support or gravity, lateral or rear access, or non-EP decoders. We do not validate the CoM or CASC surrogates against crew or mission data. The full run answers feasibility and hypervolume questions within this model, but does not test solution quality against a validated retrieval model. The next steps are the ablations, the weight sensitivity analysis and a seed-replicated baseline comparison.
+We do not model launch-load restraint or stability, lateral or rear access, or non-EP decoders. We do not validate the CoM or CASC surrogates against crew or mission data. The full run answers feasibility and hypervolume questions within this model, but does not test solution quality against a validated retrieval model. The next steps are the ablations, the weight sensitivity analysis and a seed-replicated baseline comparison.
 
 ## 10. Conclusion
 
 We examined a bi-objective payload packing formulation and its evaluation. Two defects in the earlier evaluation were found and corrected: a batched scorer that mis-scored partially packed layouts, and a significance analysis that compared stochastic runs with a single fixed value. The earlier claims of superiority, whole-run GPU speedup and polynomial scaling are withdrawn; a scoring-stage GPU speedup has been measured on a laptop GPU.
 
-On the full matched-budget run, a feasibility-aware variant found feasible packings in nearly every seed on eight of twelve datasets, where plain NSGA-II and random search found few or none. The variant's hypervolume was higher on each of those eight datasets. Holm-adjusted p-values are significant at α = 0.05 on six of the eight. The variant's fallback is a volume-ordered decode, and a deterministic volume-ordered construction is also feasible on five datasets. The variant's hypervolume exceeds that construction's on all five, though BFD-V is a single run. The result is a finding about feasibility and hypervolume under matched evaluations. It is not yet a finding about the CoM–CASC trade-off quality, which requires validated surrogates.
+On the full matched-budget run, a feasibility-aware variant found feasible packings in nearly every seed on eight of twelve datasets, where plain NSGA-II and random search found few or none. The variant's hypervolume was higher on each of those eight datasets. Holm-adjusted p-values are significant at α = 0.05 on seven of the eight (one marginal). The direction of the comparison is unchanged when the CASC constants are halved or doubled. The variant's fallback is a volume-ordered decode, and a deterministic volume-ordered construction is also feasible on five datasets. The variant's hypervolume exceeds that construction's on all five, though BFD-V is a single run. The result is a finding about feasibility and hypervolume under matched evaluations. It is not yet a finding about the CoM–CASC trade-off quality, which requires validated surrogates.
 
 ## Reproducibility Statement
 
