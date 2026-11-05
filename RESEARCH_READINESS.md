@@ -131,3 +131,5 @@ No source code, data, or result files were modified.
 | Clean sequential runtime timing | Not done |
 | Author information | Needs the authors |
 | Ablation (6 modes × 2 datasets × 10 seeds) | Done: volume-ordered fallback and orientation search are essential; contact constraint costs feasibility/HV; CASC terms individually not significant |
+
+Current manuscript: `docs/paper/manuscript_v6.md` (PDF: `docs/paper/manuscript_v6.pdf`). v5 is kept for history.
