@@ -19,6 +19,7 @@ Definitions (fixed before looking at results):
 
 Statistics: per dataset, paired comparisons across seeds (same seed index).
 Wilcoxon signed-rank (two-sided) and Cliff's delta. Bootstrap 95% CI of the mean HV.
+Holm step-down correction across datasets, within each comparison (wilcoxon_p_holm).
 With few seeds the minimum achievable two-sided Wilcoxon p is 2/2^n; with n = 3 this
 is 0.25, so the reduced run cannot reach significance and is reported as descriptive.
 
@@ -184,6 +185,21 @@ def main():
                 "min_possible_p_two_sided": 2.0 / (2 ** len(common)),
             })
     stat_df = pd.DataFrame(stat_rows)
+    # Holm step-down correction across datasets, within each comparison family.
+    stat_df["wilcoxon_p_holm"] = np.nan
+    for comp, g in (stat_df.groupby("comparison") if len(stat_df) else []):
+        p = g["wilcoxon_p_two_sided"].values
+        valid = ~np.isnan(p)
+        idx = g.index[valid]
+        pv = p[valid]
+        order = np.argsort(pv)
+        m = len(pv)
+        adj = np.empty(m)
+        running = 0.0
+        for rank, k in enumerate(order):
+            running = max(running, (m - rank) * pv[k])
+            adj[k] = min(1.0, running)
+        stat_df.loc[idx, "wilcoxon_p_holm"] = adj
     stat_df.to_csv(base / "paired_tests.csv", index=False)
 
     print(agg_df.to_string(index=False))
