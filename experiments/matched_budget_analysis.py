@@ -165,7 +165,9 @@ def main():
     # Paired comparisons across seeds: each variant against NSGA-II and random search
     for ds, gd in per_run.groupby("dataset"):
         for a, b in [("nsga2_repair", "nsga2"), ("nsga2_repair", "random"),
-                     ("nsga2", "random")]:
+                     ("nsga2", "random"), ("nsga2_seeded", "nsga2"),
+                     ("nsga2_repair", "nsga2_seeded"), ("nsga2_repair_large", "nsga2"),
+                     ("nsga2_repair_large", "nsga2_repair")]:
             ga = gd[gd.method == a].set_index("seed")["HV"]
             gb = gd[gd.method == b].set_index("seed")["HV"]
             common = ga.index.intersection(gb.index)
