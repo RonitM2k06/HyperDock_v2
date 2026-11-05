@@ -127,6 +127,7 @@ No source code, data, or result files were modified.
 | Dataset generator documented and reproducibility checked | Done (`docs/DATASETS.md`) |
 | Related work with verified references | Done; a few page/volume details flagged for final check |
 | Figures | Done (`docs/paper/figures`) |
-| Ablation (6 modes × 2 datasets × 10 seeds) | Running on laptop |
+
 | Clean sequential runtime timing | Not done |
 | Author information | Needs the authors |
+| Ablation (6 modes × 2 datasets × 10 seeds) | Done: volume-ordered fallback and orientation search are essential; contact constraint costs feasibility/HV; CASC terms individually not significant |
