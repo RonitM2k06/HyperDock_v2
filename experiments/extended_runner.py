@@ -1,0 +1,275 @@
+"""
+Extended experiments for manuscript v7, in the matched-budget output format
+(runs/*.json, raw/*.npz), run in parallel.
+
+Methods
+  nsga2               plain NSGA-II                         (as matched_budget_runner)
+  nsga2_repair        volume-ordered Baldwinian repair      (as matched_budget_runner)
+  random              random search, budget = nsga2 n_eval  (needs the nsga2 run first)
+  nsga2_seeded        plain NSGA-II whose initial population contains one BFD-V
+                      chromosome (decreasing-volume order with the orientations BFD-V
+                      chose); the rest is random. Injects the same constructive prior
+                      as the repair, through initialisation instead of decoding.
+  nsga2_repair_large  repair that moves only items with volume >= the median to the
+                      front (decreasing volume), keeping the chromosome's order for the
+                      smaller items. Tests whether the search can keep control of the
+                      small items (and so accessibility) while the large items secure
+                      feasibility.
+  bfdv                deterministic BFD-V (all six rotations per EP), one run, seed 0.
+
+Decoders
+  standard            EP decoder of the paper
+  contact             EP decoder that also requires >= 50% footprint contact with items
+                      directly nearer the access face (or z = 0)
+
+Usage (repository root)
+  # Stage 1: new methods on the full-run protocol (standard decoder)
+  python experiments/extended_runner.py --stage new_methods --workers 14
+  # Stage 1: contact-decoder study
+  python experiments/extended_runner.py --stage contact --workers 14
+  # Stage 2 (optional): seeds 11-30 for N >= 250
+  python experiments/extended_runner.py --stage more_seeds --workers 14
+Finished runs are skipped, so any stage can be interrupted and restarted.
+"""
+import argparse
+import json
+import os
+import platform
+import sys
+import time
+from multiprocessing import Pool
+from pathlib import Path
+
+import numpy as np
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+DATASET_DIR = ROOT / "datasets" / "hyperdock_bench"
+SC12 = [f"{s}-{n}" for s in ("SC1", "SC2") for n in (50, 100, 250, 500)]
+
+
+def _vol(d):
+    return float(d[0]) * float(d[1]) * float(d[2])
+
+
+def load(ds):
+    d = json.loads((DATASET_DIR / f"HB-V1-{ds}.json").read_text())
+    return d["items"], d["containers"][0]["dimensions_wdh_meters"]
+
+
+def decoder_class(name):
+    from core.placement.extreme_point import ExtremePointDecoder
+    if name == "standard":
+        return ExtremePointDecoder
+    from experiments.ablation_study import make_supported_decoder_cls
+    return make_supported_decoder_cls()
+
+
+def build_problem(items, cdims, decoder, repair):
+    """repair in {None, 'volume', 'large'}. decoder in {'standard','contact'}.
+    With decoder='standard', repair=None equals CargoProblem and repair='volume'
+    equals CargoProblemRepair (tested)."""
+    from core.placement.rotation import RotationEngine
+    from optimization.nsga2.problem import CargoProblem
+    dec_cls = decoder_class(decoder)
+    vols = np.array([_vol(it["dimensions_wdh_meters"]) for it in items])
+    median = float(np.median(vols))
+
+    class P(CargoProblem):
+        def __init__(self):
+            super().__init__(items=items, container_dims=cdims)
+            self.decodes_total = 0
+            self.repaired_count = 0
+
+        def decode(self, seq, ori):
+            d = dec_cls(self.container_dims)
+            uv, uc = 0.0, 0
+            for idx in seq:
+                base = self.items[idx]["dimensions_wdh_meters"]
+                rots = RotationEngine.all_rotations(base)
+                r = max(0, min(int(ori[idx]) - 1, len(rots) - 1))
+                if not d.try_pack_item(rots[r], self.items[idx]):
+                    uv += _vol(base)
+                    uc += 1
+            return uv, uc, d.packed_items
+
+        def _evaluate(self, x, out, *a, **k):
+            seq = [int(v) for v in x[: self.n_items]]
+            ori = np.asarray(x[self.n_items:]).astype(int)
+            uv, uc, packed = self.decode(seq, ori)
+            self.decodes_total += 1
+            if uc > 0 and repair is not None:
+                if repair == "volume":
+                    seq2 = sorted(seq, key=lambda i: -vols[i])
+                else:  # 'large': large items first by volume, small items keep GA order
+                    big = sorted([i for i in seq if vols[i] >= median], key=lambda i: -vols[i])
+                    seq2 = big + [i for i in seq if vols[i] < median]
+                uv2, uc2, p2 = self.decode(seq2, ori)
+                self.decodes_total += 1
+                if uv2 < uv:
+                    uv, uc, packed = uv2, uc2, p2
+                    self.repaired_count += 1
+            if len(packed) == 0:
+                f = [9999.0, 0.0]
+            else:
+                f = [float(self.com_evaluator.evaluate_layout(packed)["delta_com"]),
+                     -float(self.casc_evaluator.evaluate_layout(packed)["mean_casc"])]
+            out["F"] = f
+            out["G"] = [uv, float(uc)]
+
+    return P()
+
+
+def bfdv_chromosome(items, cdims, decoder):
+    """Deterministic BFD-V: decreasing volume, first EP then first rotation that fits.
+    Returns (sequence, orientations 1..6 for items BFD-V placed, 1 otherwise), packed list."""
+    from core.placement.rotation import RotationEngine
+    from core.placement.extreme_point import can_pack_jit
+    d = decoder_class(decoder)(cdims)
+    seq = sorted(range(len(items)), key=lambda i: -_vol(items[i]["dimensions_wdh_meters"]))
+    ori = np.ones(len(items), dtype=int)
+    for i in seq:
+        rots = RotationEngine.all_rotations(items[i]["dimensions_wdh_meters"])
+        done = False
+        for ep in list(d.extreme_points):
+            pt = np.array(ep, dtype=np.float64)
+            for r, dims in enumerate(rots):
+                dd = np.array(dims, dtype=np.float64)
+                ok = can_pack_jit(pt, dd, d.cw, d.cd, d.ch, d.packed_points_arr,
+                                  d.packed_dims_arr, d.num_packed)
+                if ok and hasattr(d, "_supported"):
+                    ok = d._supported(ep, dims)
+                if ok:
+                    d.add_item(ep, dims, items[i])
+                    ori[i] = r + 1
+                    done = True
+                    break
+            if done:
+                break
+    return np.array(seq), ori, d.packed_items
+
+
+def run_job(job):
+    ds, method, seed, decoder, out_dir = job
+    out_dir = Path(out_dir)
+    stem = f"{ds}__{method}__seed{seed}"
+    raw_p, run_p = out_dir / "raw" / f"{stem}.npz", out_dir / "runs" / f"{stem}.json"
+    if raw_p.exists() and run_p.exists():
+        return stem, "skipped"
+    from pymoo.algorithms.moo.nsga2 import NSGA2
+    from pymoo.optimize import minimize
+    from pymoo.core.population import Population
+    from optimization.nsga2.operators import CargoCrossover, CargoMutation, CargoSampling
+
+    items, cdims = load(ds)
+    n = len(items)
+    pop, gens = (50, 50) if n >= 250 else (100, 100)
+    np.random.seed(seed)
+    t0 = time.perf_counter()
+
+    if method == "bfdv":
+        seq, ori, packed = bfdv_chromosome(items, cdims, decoder)
+        p = build_problem(items, cdims, decoder, None)
+        x = np.concatenate([seq, ori]).astype(float)
+        uv = sum(_vol(it["dimensions_wdh_meters"]) for it in items) - sum(_vol(q["dimensions"]) for q in packed)
+        uc = n - len(packed)
+        f = [9999.0, 0.0] if not packed else [
+            float(p.com_evaluator.evaluate_layout(packed)["delta_com"]),
+            -float(p.casc_evaluator.evaluate_layout(packed)["mean_casc"])]
+        X, F, G = x[None, :], np.array([f]), np.array([[max(0.0, uv), float(uc)]])
+        n_eval, decodes = 1, 1
+    else:
+        repair = {"nsga2": None, "nsga2_seeded": None, "random": None,
+                  "nsga2_repair": "volume", "nsga2_repair_large": "large"}[method]
+        prob = build_problem(items, cdims, decoder, repair)
+        store = {"X": [], "F": [], "G": []}
+        orig = prob._evaluate
+
+        def rec(x, out, *a, **k):
+            orig(x, out, *a, **k)
+            store["X"].append(np.asarray(x, float).copy())
+            store["F"].append(np.asarray(out["F"], float).copy())
+            store["G"].append(np.asarray(out["G"], float).copy())
+        prob._evaluate = rec
+
+        if method == "random":
+            ref = json.loads((out_dir / "runs" / f"{ds}__nsga2__seed{seed}.json").read_text())
+            n_eval = int(ref["n_eval"])
+            for x in CargoSampling(n_items=n)._do(prob, n_eval):
+                prob._evaluate(x, {})
+        else:
+            sampling = CargoSampling(n_items=n)
+            if method == "nsga2_seeded":
+                seq, ori, _ = bfdv_chromosome(items, cdims, decoder)
+                X0 = CargoSampling(n_items=n)._do(prob, pop)
+                X0[0, :n], X0[0, n:] = seq, ori
+                sampling = Population.new("X", X0)
+            alg = NSGA2(pop_size=pop, sampling=sampling,
+                        crossover=CargoCrossover(n_items=n, prob=0.9),
+                        mutation=CargoMutation(n_items=n, prob=1.0 / n),
+                        eliminate_duplicates=True)
+            res = minimize(prob, alg, ("n_gen", gens), seed=seed, verbose=False)
+            n_eval = int(res.algorithm.evaluator.n_eval)
+        X, F, G = np.vstack(store["X"]), np.vstack(store["F"]), np.vstack(store["G"])
+        decodes = int(prob.decodes_total)
+
+    runtime = time.perf_counter() - t0
+    raw_p.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(raw_p, X=X, F=F, G=G, n_items=np.array(n))
+    meta = {"dataset": ds, "method": method, "seed": seed, "n_items": n, "decoder": decoder,
+            "n_eval": n_eval, "decodes": decodes, "runtime_s": runtime,
+            "feasible_evaluations": int(np.all(G <= 0, axis=1).sum()),
+            "python": platform.python_version(), "platform": platform.platform(),
+            "cpu_count": os.cpu_count()}
+    run_p.parent.mkdir(parents=True, exist_ok=True)
+    run_p.write_text(json.dumps(meta, indent=2))
+    return stem, f"ran {runtime:.0f}s feasible_evals={meta['feasible_evaluations']}"
+
+
+def seeds_for(ds, extended=False):
+    n = int(ds.split("-")[1])
+    return list(range(1, 31)) if n <= 100 else (list(range(11, 31)) if extended else list(range(1, 11)))
+
+
+def jobs_for(stage):
+    if stage == "new_methods":
+        out = str(ROOT / "experiments" / "full_matched")
+        phase1 = [(d, m, s, "standard", out) for d in SC12 for m in ("nsga2_seeded", "nsga2_repair_large")
+                  for s in seeds_for(d)]
+        return [phase1]
+    if stage == "contact":
+        out = str(ROOT / "experiments" / "contact")
+        dss = ["SC1-50", "SC2-50", "SC1-100", "SC2-100"]
+        phase1 = [(d, m, s, "contact", out) for d in dss
+                  for m in ("nsga2", "nsga2_repair", "nsga2_seeded", "nsga2_repair_large")
+                  for s in range(1, 11)] + [(d, "bfdv", 0, "contact", out) for d in dss]
+        phase2 = [(d, "random", s, "contact", out) for d in dss for s in range(1, 11)]
+        return [phase1, phase2]
+    if stage == "more_seeds":
+        out = str(ROOT / "experiments" / "full_matched")
+        dss = [d for d in SC12 if int(d.split("-")[1]) >= 250]
+        phase1 = [(d, m, s, "standard", out) for d in dss
+                  for m in ("nsga2", "nsga2_repair", "nsga2_seeded", "nsga2_repair_large")
+                  for s in seeds_for(d, extended=True)]
+        phase2 = [(d, "random", s, "standard", out) for d in dss for s in seeds_for(d, extended=True)]
+        return [phase1, phase2]
+    raise ValueError(stage)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--stage", required=True, choices=["new_methods", "contact", "more_seeds"])
+    ap.add_argument("--workers", type=int, default=12)
+    a = ap.parse_args()
+    for phase in jobs_for(a.stage):
+        # longest jobs first, for better load balance
+        phase.sort(key=lambda j: -int(j[0].split("-")[1]))
+        print(f"{len(phase)} runs, {a.workers} workers", flush=True)
+        with Pool(a.workers) as pool:
+            for stem, status in pool.imap_unordered(run_job, phase):
+                print(f"[{status}] {stem}", flush=True)
+
+
+if __name__ == "__main__":
+    main()
