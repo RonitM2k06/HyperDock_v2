@@ -1,0 +1,11 @@
+setting,variant_better_datasets,significant_holm_0.05,variant_beats_BFDV,BFDV_feasible_datasets
+C_grasp_x0.5,8,6,5,5
+C_grasp_x2,8,7,5,5
+L_arm_x0.5,8,6,5,5
+L_arm_x2,8,7,5,5
+baseline,8,7,5,5
+com_target_container_centre,7,6,5,5
+kappa_x0.5,8,7,5,5
+kappa_x2,8,7,5,5
+lambda_occ_x0.5,8,7,5,5
+lambda_occ_x2,8,7,5,5

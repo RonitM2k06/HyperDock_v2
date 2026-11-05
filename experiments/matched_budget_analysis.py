@@ -20,6 +20,8 @@ Definitions (fixed before looking at results):
 Statistics: per dataset, paired comparisons across seeds (same seed index).
 Wilcoxon signed-rank (two-sided) and Cliff's delta. Bootstrap 95% CI of the mean HV.
 Holm step-down correction across datasets, within each comparison (wilcoxon_p_holm).
+Datasets where both compared methods have HV 0 in every run are excluded from the
+Holm family (column 'informative'), since no test is possible there.
 With few seeds the minimum achievable two-sided Wilcoxon p is 2/2^n; with n = 3 this
 is 0.25, so the reduced run cannot reach significance and is reported as descriptive.
 
@@ -187,9 +189,16 @@ def main():
     stat_df = pd.DataFrame(stat_rows)
     # Holm step-down correction across datasets, within each comparison family.
     stat_df["wilcoxon_p_holm"] = np.nan
+    # A comparison where both methods have HV 0 in every run (no feasible point at
+    # all, e.g. SC3) is not a test; it is excluded from the Holm family and gets NaN.
+    if len(stat_df):
+        stat_df["informative"] = [
+            not (np.allclose(per_run[(per_run.dataset == r.dataset) &
+                                     (per_run.method.isin(r.comparison.split(" vs ")))]["HV"], 0))
+            for r in stat_df.itertuples()]
     for comp, g in (stat_df.groupby("comparison") if len(stat_df) else []):
         p = g["wilcoxon_p_two_sided"].values
-        valid = ~np.isnan(p)
+        valid = ~np.isnan(p) & g["informative"].values
         idx = g.index[valid]
         pv = p[valid]
         order = np.argsort(pv)

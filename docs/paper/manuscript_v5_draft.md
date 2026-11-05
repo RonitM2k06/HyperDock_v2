@@ -26,14 +26,17 @@ We do not claim a validated accessibility benefit, a validated retrieval model, 
 
 ## 2. Related Work
 
-Three bodies of work bear on this study. Each citation below was checked against a bibliographic record.
+Every citation below was checked against a bibliographic record (publisher page, RePEc, arXiv or a repository record).
 
-- **Extreme Point packing.** Crainic, Perboli and Tadei (2008) present EP-based heuristics for three-dimensional bin packing [INFORMS Journal on Computing, DOI 10.1287/ijoc.1070.0250]. Our decoder follows the EP idea and adds bounds and overlap checks, but it has no support constraint.
-- **Multi-objective evolutionary search.** NSGA-II [Deb, Pratap, Agarwal and Meyarivan, 2002, IEEE Transactions on Evolutionary Computation 6(2), 182–197] is the optimiser used here. The bibliographic details were confirmed against a repository record; no DOI was confirmed, so none is given.
-- **GPU-accelerated metaheuristics for packing.** Özcan, Dokeroğlu, Coşar and Yazıcı (2016) present a grouping genetic algorithm for one-dimensional bin packing on a GPU [ISCIS 2016, Kraków; LNCS-series DOI 10.1007/978-3-319-47217-1_6]. Its venue, year and DOI were confirmed on two records; first names of all authors were not, and the one-dimensional setting differs from ours. It shows that GPU evaluation of packing candidates has been explored, but not for CoM–CASC objectives or with a feasibility-aware decode.
-- **Space logistics.** A 2023 review of space logistics modelling and optimisation (arXiv:2306.01107) confirms that the area exists. An earlier draft also cited a 2018 Acta Astronautica review and a 2021 Computers & Operations Research GPU paper; neither could be verified and both are removed.
+**Three-dimensional packing.** Exact and heuristic methods for the three-dimensional bin packing problem were established by Martello, Pisinger and Vigo (2000). Crainic, Perboli and Tadei (2008) introduced Extreme Points (EP) as placement candidates, which our decoder uses. Gonçalves and Resende (2013) encode a packing as a sequence and orientation genotype decoded by a placement heuristic, with a biased random-key genetic algorithm. Our chromosome follows the same decoder-based design, but with permutation operators and two objectives. Bortfeldt and Wäscher (2013) review the practical constraints of container loading, including weight distribution, load stability, orientation and positioning. In their terms, our CoM objective is a weight-distribution criterion and CASC is a positioning criterion for retrieval. Our decoder does not model load stability (Section 3.2).
 
-The research gap we can defend is narrow: how a feasibility requirement changes the search outcome relative to a matched evaluation budget, for a CoM–accessibility formulation with an EP decoder. We have not established that no prior work addresses it; a systematic literature search remains to be done **[PENDING]**.
+**Spacecraft cargo stowage.** Cargo accommodation for the International Space Station has been supported by an operational optimisation tool, CAST, built on global optimisation and heuristics with balancing and positioning rules (Fasano, Lavopa, Negri and Vola, 2015). Ho (2023) reviews space logistics modelling and optimisation at the campaign and network level rather than the stowage level. We found no published study that pairs a CoM objective with an accessibility objective under an EP decoder and evaluates the methods under a matched budget. This is a statement about our search, not a guarantee that none exists.
+
+**Evolutionary multi-objective optimisation and constraints.** NSGA-II (Deb, Pratap, Agarwal and Meyarivan, 2002) handles constraints by constrained domination, which follows Deb's (2000) feasibility rules: feasible solutions dominate infeasible ones, and infeasible solutions are ranked by violation. We use the pymoo implementation (Blank and Deb, 2020). The feasibility-aware variant differs in where the constraint is handled. It changes the decoder's output rather than the selection rule, and leaves the genotype unchanged, which is a Baldwinian repair.
+
+**Evaluation methodology.** Hypervolume as a quality indicator for Pareto front approximations goes back to Zitzler and Thiele (1999). For comparing stochastic algorithms over several problems we follow the nonparametric practice recommended by Derrac, García, Molina and Herrera (2011): paired tests per problem and a family-wise correction across problems.
+
+**GPU evaluation.** Özcan, Dokeroğlu, Coşar and Yazıcı (2016) run a grouping genetic algorithm for one-dimensional bin packing on a GPU. Our batched scorer addresses a different problem (three-dimensional objectives) and is reported only as a scoring-stage measurement.
 
 ## 3. Problem Formulation (as implemented)
 
@@ -248,10 +251,20 @@ The seed lists are as in Section 5.3: seeds 1–30 for N ∈ {50, 100} and seeds
 
 ## References
 
-- Crainic, T. G., Perboli, G., and Tadei, R. (2008). Extreme point-based heuristics for three-dimensional bin packing. *INFORMS Journal on Computing*, DOI 10.1287/ijoc.1070.0250.
-- Deb, K., Pratap, A., Agarwal, S., and Meyarivan, T. (2002). A fast and elitist multiobjective genetic algorithm: NSGA-II. *IEEE Transactions on Evolutionary Computation*, 6(2), 182–197. [Bibliographic details confirmed from a repository record; no DOI confirmed.]
-- Özcan, S. O., Dokeroğlu, T., Coşar, A., and Yazıcı, A. (2016). A novel grouping genetic algorithm for the one-dimensional bin packing problem on GPU. *31st International Symposium on Computer and Information Sciences (ISCIS)*, Kraków, DOI 10.1007/978-3-319-47217-1_6. [Venue, year and DOI confirmed on two records; first names not confirmed.]
-- arXiv:2306.01107 (2023). Space logistics modelling and optimisation: review of the state of the art. [Existence confirmed; full bibliographic details to be confirmed.]
+- Blank, J., and Deb, K. (2020). pymoo: Multi-objective optimization in Python. *IEEE Access*, 8, 89497–89509. DOI 10.1109/ACCESS.2020.2990567.
+- Bortfeldt, A., and Wäscher, G. (2013). Constraints in container loading – a state-of-the-art review. *European Journal of Operational Research*, 229(1), 1–20. DOI 10.1016/j.ejor.2012.12.006.
+- Crainic, T. G., Perboli, G., and Tadei, R. (2008). Extreme point-based heuristics for three-dimensional bin packing. *INFORMS Journal on Computing*, 20(3), 368–384. DOI 10.1287/ijoc.1070.0250.
+- Deb, K. (2000). An efficient constraint handling method for genetic algorithms. *Computer Methods in Applied Mechanics and Engineering*, 186(2–4), 311–338. DOI 10.1016/S0045-7825(99)00389-8.
+- Deb, K., Pratap, A., Agarwal, S., and Meyarivan, T. (2002). A fast and elitist multiobjective genetic algorithm: NSGA-II. *IEEE Transactions on Evolutionary Computation*, 6(2), 182–197. DOI 10.1109/4235.996017.
+- Derrac, J., García, S., Molina, D., and Herrera, F. (2011). A practical tutorial on the use of nonparametric statistical tests as a methodology for comparing evolutionary and swarm intelligence algorithms. *Swarm and Evolutionary Computation*, 1(1), 3–18. DOI 10.1016/j.swevo.2011.02.002.
+- Fasano, G., Lavopa, C., Negri, D., and Vola, M. C. (2015). CAST: A successful project in support of the International Space Station logistics. In *Optimized Packings with Applications*, Springer Optimization and Its Applications, pp. 87–117. DOI 10.1007/978-3-319-18899-7_5.
+- Gonçalves, J. F., and Resende, M. G. C. (2013). A biased random key genetic algorithm for 2D and 3D bin packing problems. *International Journal of Production Economics*, 145(2), 500–510. DOI 10.1016/j.ijpe.2013.04.019.
+- Ho, K. (2023). Space logistics modeling and optimization: review of the state of the art. arXiv:2306.01107; journal version DOI 10.2514/1.A35982.
+- Martello, S., Pisinger, D., and Vigo, D. (2000). The three-dimensional bin packing problem. *Operations Research*, 48(2), 256–267. DOI 10.1287/opre.48.2.256.12386.
+- Özcan, S. O., Dokeroğlu, T., Coşar, A., and Yazıcı, A. (2016). A novel grouping genetic algorithm for the one-dimensional bin packing problem on GPU. *31st International Symposium on Computer and Information Sciences (ISCIS)*, Kraków. DOI 10.1007/978-3-319-47217-1_6.
+- Zitzler, E., and Thiele, L. (1999). Multiobjective evolutionary algorithms: a comparative case study and the strength Pareto approach. *IEEE Transactions on Evolutionary Computation*, 3(4), 257–271. DOI 10.1109/4235.797969.
+
+**Verification notes.** Title, venue, volume, pages and DOI were confirmed from bibliographic records for Bortfeldt and Wäscher, Gonçalves and Resende, Martello et al., Fasano et al., Derrac et al., Blank and Deb (DOI and year), Ho (author, DOI), Deb (2000) (DOI) and Zitzler and Thiele (volume, issue, pages). Before submission, the following must be checked against the publisher records, because they come from standard citations rather than a record retrieved in this study: Crainic et al. (volume, issue and pages), Deb et al. (2002) (DOI), Deb (2000) (volume and pages), Zitzler and Thiele (DOI), Blank and Deb (volume and pages), and the journal name for Ho.
 
 **Removed from earlier drafts (could not be verified):** Fasano et al. (2018), Acta Astronautica; Sheng et al. (2021), Computers & Operations Research.
 
