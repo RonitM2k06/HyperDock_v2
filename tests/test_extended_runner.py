@@ -40,3 +40,36 @@ def test_large_repair_never_worse_than_no_repair():
         oa, ob = {}, {}
         a._evaluate(x, oa); b._evaluate(x, ob)
         assert oa["G"][0] <= ob["G"][0] + 1e-12
+
+
+def test_br_orientation_flags_respected():
+    """Every placed BR box stands only on a dimension its BR flag allows to be vertical (y)."""
+    from experiments.extended_runner import rotation_for_gene, allowed_rotations
+    from experiments.br_instances import PERMS
+    items, c = load("BR4-1")
+    rng = np.random.default_rng(0)
+    for it in items:
+        allowed_vertical = {it["dimensions_wdh_meters"][PERMS[r][1]] for r in allowed_rotations(it)}
+        for g in range(1, 7):
+            assert rotation_for_gene(it, g)[1] in allowed_vertical
+    p = build_problem(items, c, "standard", "volume")
+    x = np.concatenate([rng.permutation(len(items)), rng.integers(1, 7, len(items))]).astype(float)
+    _, _, packed = p.decode([int(v) for v in x[:len(items)]], x[len(items):].astype(int))
+    assert len(packed) > 0
+
+
+def test_br_com_target_is_container_centre():
+    from experiments.extended_runner import com_target
+    items, c = load("BR1-1")
+    assert np.allclose(com_target("BR1-1"), np.array(c) / 2)
+
+
+def test_bfdv_chromosome_reproduces_on_br():
+    from experiments.extended_runner import com_target
+    for ds in ["BR1-1", "BR7-1"]:
+        items, c = load(ds)
+        seq, ori, packed = bfdv_chromosome(items, c, "standard")
+        p = build_problem(items, c, "standard", None, com_target(ds))
+        out = {}
+        p._evaluate(np.concatenate([seq, ori]).astype(float), out)
+        assert out["G"][1] == len(items) - len(packed)

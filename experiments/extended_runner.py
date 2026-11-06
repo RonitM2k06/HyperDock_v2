@@ -53,9 +53,37 @@ def _vol(d):
     return float(d[0]) * float(d[1]) * float(d[2])
 
 
+BR_DIR = ROOT / "datasets" / "br"
+BR = ["BR1-1", "BR1-2", "BR4-1", "BR4-2", "BR7-1", "BR7-2"]
+
+
+def _dataset(ds):
+    path = BR_DIR / f"{ds}.json" if ds.startswith("BR") else DATASET_DIR / f"HB-V1-{ds}.json"
+    return json.loads(path.read_text())
+
+
 def load(ds):
-    d = json.loads((DATASET_DIR / f"HB-V1-{ds}.json").read_text())
+    d = _dataset(ds)
     return d["items"], d["containers"][0]["dimensions_wdh_meters"]
+
+
+def com_target(ds):
+    return _dataset(ds).get("com_target")
+
+
+def allowed_rotations(item):
+    """0-based RotationEngine indices this item may use (all six unless restricted)."""
+    return item.get("allowed_rotations", list(range(6)))
+
+
+def rotation_for_gene(item, gene):
+    """Map an orientation gene in 1..6 onto the item's allowed rotations.
+    With all six allowed this is the identity (gene g -> rotation g)."""
+    from core.placement.rotation import RotationEngine
+    allowed = allowed_rotations(item)
+    rots = RotationEngine.all_rotations(item["dimensions_wdh_meters"])
+    g = max(1, min(int(gene), 6))
+    return rots[allowed[(g - 1) % len(allowed)]]
 
 
 def decoder_class(name):
@@ -66,7 +94,7 @@ def decoder_class(name):
     return make_supported_decoder_cls()
 
 
-def build_problem(items, cdims, decoder, repair):
+def build_problem(items, cdims, decoder, repair, target=None):
     """repair in {None, 'volume', 'large'}. decoder in {'standard','contact'}.
     With decoder='standard', repair=None equals CargoProblem and repair='volume'
     equals CargoProblemRepair (tested)."""
@@ -79,6 +107,10 @@ def build_problem(items, cdims, decoder, repair):
     class P(CargoProblem):
         def __init__(self):
             super().__init__(items=items, container_dims=cdims)
+            if target is not None:
+                from core.metrics.com import CoMModel, CoMConfig
+                t = np.array(target, dtype=float)
+                self.com_evaluator = CoMModel(CoMConfig(target_com=t, dry_mass=5000.0, dry_com=t))
             self.decodes_total = 0
             self.repaired_count = 0
 
@@ -87,9 +119,7 @@ def build_problem(items, cdims, decoder, repair):
             uv, uc = 0.0, 0
             for idx in seq:
                 base = self.items[idx]["dimensions_wdh_meters"]
-                rots = RotationEngine.all_rotations(base)
-                r = max(0, min(int(ori[idx]) - 1, len(rots) - 1))
-                if not d.try_pack_item(rots[r], self.items[idx]):
+                if not d.try_pack_item(rotation_for_gene(self.items[idx], ori[idx]), self.items[idx]):
                     uv += _vol(base)
                     uc += 1
             return uv, uc, d.packed_items
@@ -130,7 +160,8 @@ def bfdv_chromosome(items, cdims, decoder):
     seq = sorted(range(len(items)), key=lambda i: -_vol(items[i]["dimensions_wdh_meters"]))
     ori = np.ones(len(items), dtype=int)
     for i in seq:
-        rots = RotationEngine.all_rotations(items[i]["dimensions_wdh_meters"])
+        all_rots = RotationEngine.all_rotations(items[i]["dimensions_wdh_meters"])
+        rots = [all_rots[k] for k in allowed_rotations(items[i])]
         done = False
         for ep in list(d.extreme_points):
             pt = np.array(ep, dtype=np.float64)
@@ -170,7 +201,7 @@ def run_job(job):
 
     if method == "bfdv":
         seq, ori, packed = bfdv_chromosome(items, cdims, decoder)
-        p = build_problem(items, cdims, decoder, None)
+        p = build_problem(items, cdims, decoder, None, com_target(ds))
         x = np.concatenate([seq, ori]).astype(float)
         uv = sum(_vol(it["dimensions_wdh_meters"]) for it in items) - sum(_vol(q["dimensions"]) for q in packed)
         uc = n - len(packed)
@@ -182,7 +213,7 @@ def run_job(job):
     else:
         repair = {"nsga2": None, "nsga2_seeded": None, "random": None,
                   "nsga2_repair": "volume", "nsga2_repair_large": "large"}[method]
-        prob = build_problem(items, cdims, decoder, repair)
+        prob = build_problem(items, cdims, decoder, repair, com_target(ds))
         store = {"X": [], "F": [], "G": []}
         orig = prob._evaluate
 
@@ -246,6 +277,13 @@ def jobs_for(stage):
                   for s in range(1, 11)] + [(d, "bfdv", 0, "contact", out) for d in dss]
         phase2 = [(d, "random", s, "contact", out) for d in dss for s in range(1, 11)]
         return [phase1, phase2]
+    if stage == "br":
+        out = str(ROOT / "experiments" / "br")
+        phase1 = [(d, m, s, "standard", out) for d in BR
+                  for m in ("nsga2", "nsga2_repair", "nsga2_seeded", "nsga2_repair_large")
+                  for s in range(1, 11)] + [(d, "bfdv", 0, "standard", out) for d in BR]
+        phase2 = [(d, "random", s, "standard", out) for d in BR for s in range(1, 11)]
+        return [phase1, phase2]
     if stage == "more_seeds":
         out = str(ROOT / "experiments" / "full_matched")
         dss = [d for d in SC12 if int(d.split("-")[1]) >= 250]
@@ -259,12 +297,12 @@ def jobs_for(stage):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--stage", required=True, choices=["new_methods", "contact", "more_seeds"])
+    ap.add_argument("--stage", required=True, choices=["new_methods", "contact", "more_seeds", "br"])
     ap.add_argument("--workers", type=int, default=12)
     a = ap.parse_args()
     for phase in jobs_for(a.stage):
         # longest jobs first, for better load balance
-        phase.sort(key=lambda j: -int(j[0].split("-")[1]))
+        phase.sort(key=lambda j: -len(load(j[0])[0]))
         print(f"{len(phase)} runs, {a.workers} workers", flush=True)
         with Pool(a.workers) as pool:
             for stem, status in pool.imap_unordered(run_job, phase):
