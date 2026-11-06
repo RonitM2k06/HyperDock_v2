@@ -20,9 +20,10 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-C = {"nsga2": "#2a78d6", "nsga2_repair": "#eb6834", "random": "#8a8a85", "BFD-V": "#1baf7a"}
-LABEL = {"nsga2": "NSGA-II", "nsga2_repair": "Feasibility-aware variant", "random": "Random search",
-         "BFD-V": "BFD-V (deterministic)"}
+C = {"nsga2": "#2a78d6", "nsga2_repair": "#eb6834", "nsga2_seeded": "#1baf7a",
+     "nsga2_repair_large": "#eda100", "random": "#8a8a85", "BFD-V": "#2b2b29"}
+LABEL = {"nsga2": "NSGA-II", "nsga2_repair": "Volume repair", "nsga2_seeded": "Seeded NSGA-II",
+         "nsga2_repair_large": "Large-item repair", "random": "Random search", "BFD-V": "BFD-V (deterministic)"}
 DS = [f"{s}-{n}" for s in ("SC1", "SC2") for n in (50, 100, 250, 500)]
 INK, MUTED = "#2b2b29", "#6b6b66"
 
@@ -37,21 +38,27 @@ def save(fig, out, name):
     plt.close(fig)
 
 
+def m_df_methods(m):
+    return m.method.unique()
+
+
 def fig_feasibility(m, out):
-    methods = ["nsga2", "nsga2_repair", "random", "BFD-V"]
+    present = set(m.method.unique())
+    methods = [k for k in ["nsga2", "nsga2_repair", "nsga2_seeded", "nsga2_repair_large", "BFD-V"]
+               if k in present]
     rate = m.groupby(["dataset", "method"])["feasible"].mean().unstack()
     fig, ax = plt.subplots(figsize=(7.0, 2.6))
-    w = 0.2
+    w = 0.8 / len(methods)
     x = np.arange(len(DS))
     for k, meth in enumerate(methods):
         vals = rate.reindex(DS)[meth].values
-        ax.bar(x + (k - 1.5) * w, vals, w * 0.9, color=C[meth], label=LABEL[meth])
+        ax.bar(x + (k - (len(methods) - 1) / 2) * w, vals, w * 0.88, color=C[meth], label=LABEL[meth])
     ax.set_xticks(x, DS)
     ax.set_ylabel("Feasible-run rate")
     ax.set_ylim(0, 1.05)
     ax.yaxis.grid(True, color="#e6e5e0", lw=0.6)
     ax.set_axisbelow(True)
-    ax.legend(ncol=4, loc="upper center", bbox_to_anchor=(0.5, 1.18))
+    ax.legend(ncol=5, loc="upper center", bbox_to_anchor=(0.5, 1.18), fontsize=8)
     save(fig, out, "fig_feasibility")
 
 
@@ -59,10 +66,12 @@ def fig_hv(m, out):
     fig, ax = plt.subplots(figsize=(7.0, 2.8))
     rng = np.random.default_rng(0)
     for i, ds in enumerate(DS):
-        for k, meth in enumerate(["nsga2", "nsga2_repair"]):
+        for k, meth in enumerate(["nsga2", "nsga2_repair", "nsga2_seeded"]):
             v = m[(m.dataset == ds) & (m.method == meth)]["HV"].values
-            xpos = i + (k - 0.5) * 0.32
-            ax.boxplot(v, positions=[xpos], widths=0.24, showfliers=False,
+            if len(v) == 0:
+                continue
+            xpos = i + (k - 1) * 0.27
+            ax.boxplot(v, positions=[xpos], widths=0.2, showfliers=False,
                        medianprops=dict(color=INK, lw=1.2),
                        boxprops=dict(color=C[meth]), whiskerprops=dict(color=C[meth]),
                        capprops=dict(color=C[meth]))
@@ -80,10 +89,10 @@ def fig_hv(m, out):
     save(fig, out, "fig_hv")
 
 
-def fig_fronts(fr, base_dir, out, datasets=("SC1-100", "SC2-50")):
+def fig_fronts(fr, base_dir, out, datasets=("SC2-50", "SC1-250")):
     fig, axes = plt.subplots(1, len(datasets), figsize=(7.0, 2.9))
     for ax, ds in zip(axes, datasets):
-        for meth in ["nsga2", "nsga2_repair"]:
+        for meth in ["nsga2", "nsga2_repair", "nsga2_seeded"]:
             pts = [fr[k] for k in fr.files if k.startswith(f"{ds}__{meth}__") and k.endswith("__F")]
             if pts:
                 P = np.vstack(pts)
@@ -104,7 +113,7 @@ def fig_fronts(fr, base_dir, out, datasets=("SC1-100", "SC2-50")):
         for h, l in zip(*ax.get_legend_handles_labels()):
             if l not in labels:
                 handles.append(h); labels.append(l)
-    fig.legend(handles, labels, ncol=3, loc="upper center", bbox_to_anchor=(0.5, 1.06))
+    fig.legend(handles, labels, ncol=4, loc="upper center", bbox_to_anchor=(0.5, 1.06))
     fig.tight_layout()
     save(fig, out, "fig_fronts")
 
