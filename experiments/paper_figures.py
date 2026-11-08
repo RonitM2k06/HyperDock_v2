@@ -118,12 +118,39 @@ def fig_fronts(fr, base_dir, out, datasets=("SC2-50", "SC1-250")):
     save(fig, out, "fig_fronts")
 
 
+def fig_br(m, out):
+    """Feasible-run rate and HV on the Bischoff-Ratcliff instances."""
+    ds = ["BR1-1", "BR1-2", "BR4-1", "BR4-2", "BR7-1", "BR7-2"]
+    methods = ["nsga2", "nsga2_repair", "nsga2_seeded", "nsga2_repair_large"]
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.6))
+    x = np.arange(len(ds))
+    w = 0.8 / len(methods)
+    for k, meth in enumerate(methods):
+        g = m[m.method == meth].groupby("dataset")
+        rate = g["feasible"].mean().reindex(ds).values
+        hv = g["HV"].mean().reindex(ds).values
+        off = (k - (len(methods) - 1) / 2) * w
+        axes[0].bar(x + off, rate, w * 0.88, color=C[meth], label=LABEL[meth])
+        axes[1].bar(x + off, hv, w * 0.88, color=C[meth])
+    for ax, lab in zip(axes, ["Feasible-run rate", "Mean hypervolume"]):
+        ax.set_xticks(x, ds, fontsize=8)
+        ax.set_ylabel(lab)
+        ax.yaxis.grid(True, color="#e6e5e0", lw=0.6)
+        ax.set_axisbelow(True)
+    axes[0].set_ylim(0, 1.05)
+    fig.legend(*axes[0].get_legend_handles_labels(), ncol=4, loc="upper center",
+               bbox_to_anchor=(0.5, 1.08), fontsize=8)
+    fig.tight_layout()
+    save(fig, out, "fig_br")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--metrics", required=True)
     ap.add_argument("--fronts", required=True)
     ap.add_argument("--baselines", required=True)
     ap.add_argument("--out", default="docs/paper/figures")
+    ap.add_argument("--br-metrics", default=None, help="per_run_metrics.csv of the BR study")
     a = ap.parse_args()
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -131,6 +158,8 @@ def main():
     fig_feasibility(m, out)
     fig_hv(m, out)
     fig_fronts(np.load(a.fronts), a.baselines, out)
+    if a.br_metrics:
+        fig_br(pd.read_csv(a.br_metrics), out)
     print("figures written to", out)
 
 
