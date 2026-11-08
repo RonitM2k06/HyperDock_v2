@@ -14,7 +14,8 @@ import pandas as pd
 from scipy import stats
 
 PAIRS = [("nsga2_repair", "nsga2"), ("nsga2_seeded", "nsga2"), ("nsga2_repair_large", "nsga2"),
-         ("nsga2_repair_large", "nsga2_repair")]
+         ("nsga2_repair_large", "nsga2_repair"), ("nsga2_repair", "nsga2_seeded"),
+         ("faps", "nsga2"), ("faps", "nsga2_repair"), ("faps", "nsga2_seeded")]
 
 
 def main():

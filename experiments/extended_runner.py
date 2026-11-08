@@ -113,6 +113,7 @@ def build_problem(items, cdims, decoder, repair, target=None):
                 self.com_evaluator = CoMModel(CoMConfig(target_com=t, dry_mass=5000.0, dry_com=t))
             self.decodes_total = 0
             self.repaired_count = 0
+            self.repair_active = True   # FAPS switches this on demand
 
         def decode(self, seq, ori):
             d = dec_cls(self.container_dims)
@@ -129,7 +130,7 @@ def build_problem(items, cdims, decoder, repair, target=None):
             ori = np.asarray(x[self.n_items:]).astype(int)
             uv, uc, packed = self.decode(seq, ori)
             self.decodes_total += 1
-            if uc > 0 and repair is not None:
+            if uc > 0 and repair is not None and self.repair_active:
                 if repair == "volume":
                     seq2 = sorted(seq, key=lambda i: -vols[i])
                 else:  # 'large': large items first by volume, small items keep GA order
@@ -151,13 +152,31 @@ def build_problem(items, cdims, decoder, repair, target=None):
     return P()
 
 
+PORTFOLIO = {
+    # name: sort key (sorted descending); the first placed items sit nearest the access face
+    "volume": lambda it: _vol(it["dimensions_wdh_meters"]),
+    "base_area": lambda it: max(a * b for a, b in [(it["dimensions_wdh_meters"][0], it["dimensions_wdh_meters"][1]),
+                                                   (it["dimensions_wdh_meters"][0], it["dimensions_wdh_meters"][2]),
+                                                   (it["dimensions_wdh_meters"][1], it["dimensions_wdh_meters"][2])]),
+    "longest_side": lambda it: max(it["dimensions_wdh_meters"]),
+    "mass": lambda it: float(it.get("mass_kg", 0.0)),
+}
+
+
 def bfdv_chromosome(items, cdims, decoder):
-    """Deterministic BFD-V: decreasing volume, first EP then first rotation that fits.
-    Returns (sequence, orientations 1..6 for items BFD-V placed, 1 otherwise), packed list."""
+    """Deterministic BFD-V: decreasing volume, first EP then first rotation that fits."""
+    return constructive_chromosome(items, cdims, decoder, "volume")
+
+
+def constructive_chromosome(items, cdims, decoder, key):
+    """Best-fit-decreasing by PORTFOLIO[key]: items sorted by decreasing key (stable),
+    each placed at the first extreme point and first permitted rotation that fits.
+    Returns (sequence, orientation genes 1..6 that reproduce the layout, packed list)."""
     from core.placement.rotation import RotationEngine
     from core.placement.extreme_point import can_pack_jit
     d = decoder_class(decoder)(cdims)
-    seq = sorted(range(len(items)), key=lambda i: -_vol(items[i]["dimensions_wdh_meters"]))
+    f = PORTFOLIO[key]
+    seq = sorted(range(len(items)), key=lambda i: -f(items[i]))
     ori = np.ones(len(items), dtype=int)
     for i in seq:
         all_rots = RotationEngine.all_rotations(items[i]["dimensions_wdh_meters"])
@@ -196,6 +215,8 @@ def run_job(job):
     items, cdims = load(ds)
     n = len(items)
     pop, gens = (50, 50) if n >= 250 else (100, 100)
+    if os.environ.get("HD_SMOKE_GENS"):  # smoke tests only; never used for reported runs
+        pop, gens = 20, int(os.environ["HD_SMOKE_GENS"])
     np.random.seed(seed)
     t0 = time.perf_counter()
 
@@ -211,9 +232,21 @@ def run_job(job):
         X, F, G = x[None, :], np.array([f]), np.array([[max(0.0, uv), float(uc)]])
         n_eval, decodes = 1, 1
     else:
-        repair = {"nsga2": None, "nsga2_seeded": None, "random": None,
-                  "nsga2_repair": "volume", "nsga2_repair_large": "large"}[method]
+        base = method[4:] if method.startswith("sms_") else method
+        base = {"": "nsga2", "repair": "nsga2_repair", "seeded": "nsga2_seeded", "faps": "faps"}.get(base, base)
+        portfolio, faps_mode = None, None
+        if base == "faps":
+            # Feasibility-adaptive portfolio seeding (FAPS): one constructive seed per
+            # portfolio order, and the volume repair held in reserve. The repair is switched
+            # on only if no feasible packing has been evaluated after 10% of the generations.
+            portfolio = [constructive_chromosome(items, cdims, decoder, k) for k in PORTFOLIO]
+            faps_mode = {"feasible_seeds": int(sum(len(pk) == n for _, _, pk in portfolio)),
+                         "repair_activated_at_gen": None}
+        repair = {"nsga2": None, "nsga2_seeded": None, "random": None, "faps": "volume",
+                  "nsga2_repair": "volume", "nsga2_repair_large": "large"}[base]
         prob = build_problem(items, cdims, decoder, repair, com_target(ds))
+        if base == "faps":
+            prob.repair_active = False
         store = {"X": [], "F": [], "G": []}
         orig = prob._evaluate
 
@@ -231,16 +264,42 @@ def run_job(job):
                 prob._evaluate(x, {})
         else:
             sampling = CargoSampling(n_items=n)
-            if method == "nsga2_seeded":
+            seeds = []
+            if base == "nsga2_seeded":
                 seq, ori, _ = bfdv_chromosome(items, cdims, decoder)
+                seeds = [(seq, ori)]
+            elif base == "faps":
+                seen = set()
+                for seq, ori, _ in portfolio:
+                    key = (tuple(seq), tuple(ori))
+                    if key not in seen:
+                        seen.add(key)
+                        seeds.append((seq, ori))
+            if seeds:
                 X0 = CargoSampling(n_items=n)._do(prob, pop)
-                X0[0, :n], X0[0, n:] = seq, ori
+                for j, (seq, ori) in enumerate(seeds):
+                    X0[j, :n], X0[j, n:] = seq, ori
                 sampling = Population.new("X", X0)
-            alg = NSGA2(pop_size=pop, sampling=sampling,
-                        crossover=CargoCrossover(n_items=n, prob=0.9),
-                        mutation=CargoMutation(n_items=n, prob=1.0 / n),
-                        eliminate_duplicates=True)
-            res = minimize(prob, alg, ("n_gen", gens), seed=seed, verbose=False)
+            ops = dict(pop_size=pop, sampling=sampling,
+                       crossover=CargoCrossover(n_items=n, prob=0.9),
+                       mutation=CargoMutation(n_items=n, prob=1.0 / n),
+                       eliminate_duplicates=True)
+            if method.startswith("sms_"):
+                from pymoo.algorithms.moo.sms import SMSEMOA
+                alg = SMSEMOA(**ops)
+            else:
+                alg = NSGA2(**ops)
+            callback = None
+            if base == "faps":
+                check_gen = max(1, int(round(0.1 * gens)))
+
+                def callback(algorithm):
+                    if (not prob.repair_active and algorithm.n_gen >= check_gen
+                            and not any(np.all(g <= 0) for g in store["G"])):
+                        prob.repair_active = True
+                        faps_mode["repair_activated_at_gen"] = int(algorithm.n_gen)
+            kw = {"callback": callback} if callback is not None else {}
+            res = minimize(prob, alg, ("n_gen", gens), seed=seed, verbose=False, **kw)
             n_eval = int(res.algorithm.evaluator.n_eval)
         X, F, G = np.vstack(store["X"]), np.vstack(store["F"]), np.vstack(store["G"])
         decodes = int(prob.decodes_total)
@@ -249,7 +308,8 @@ def run_job(job):
     raw_p.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(raw_p, X=X, F=F, G=G, n_items=np.array(n))
     meta = {"dataset": ds, "method": method, "seed": seed, "n_items": n, "decoder": decoder,
-            "n_eval": n_eval, "decodes": decodes, "runtime_s": runtime,
+            "n_eval": n_eval, "decodes": decodes + (len(PORTFOLIO) if method.endswith("faps") else 0),
+            "runtime_s": runtime, "faps_mode": locals().get("faps_mode"),
             "feasible_evaluations": int(np.all(G <= 0, axis=1).sum()),
             "python": platform.python_version(), "platform": platform.platform(),
             "cpu_count": os.cpu_count()}
@@ -284,6 +344,18 @@ def jobs_for(stage):
                   for s in range(1, 11)] + [(d, "bfdv", 0, "standard", out) for d in BR]
         phase2 = [(d, "random", s, "standard", out) for d in BR for s in range(1, 11)]
         return [phase1, phase2]
+    if stage == "faps":
+        out_s = str(ROOT / "experiments" / "full_matched")
+        out_b = str(ROOT / "experiments" / "br")
+        p1 = [(d, "faps", s, "standard", out_s) for d in SC12 for s in range(1, 31)]
+        p1 += [(d, "faps", s, "standard", out_b) for d in BR for s in range(1, 11)]
+        return [p1]
+    if stage == "sms":
+        out = str(ROOT / "experiments" / "sms")
+        dss = ["SC1-50", "SC2-50", "SC1-100", "SC1-250", "SC2-250", "BR1-1", "BR4-2", "BR7-2"]
+        p1 = [(d, m, s, "standard", out) for d in dss
+              for m in ("sms_nsga2", "sms_repair", "sms_seeded", "sms_faps") for s in range(1, 11)]
+        return [p1]  # random search does not depend on the optimiser; see the main study
     if stage == "more_seeds":
         out = str(ROOT / "experiments" / "full_matched")
         dss = [d for d in SC12 if int(d.split("-")[1]) >= 250]
@@ -297,7 +369,7 @@ def jobs_for(stage):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--stage", required=True, choices=["new_methods", "contact", "more_seeds", "br"])
+    ap.add_argument("--stage", required=True, choices=["new_methods", "contact", "more_seeds", "br", "faps", "sms"])
     ap.add_argument("--workers", type=int, default=12)
     a = ap.parse_args()
     for phase in jobs_for(a.stage):

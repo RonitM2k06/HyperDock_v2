@@ -167,7 +167,11 @@ def main():
         for a, b in [("nsga2_repair", "nsga2"), ("nsga2_repair", "random"),
                      ("nsga2", "random"), ("nsga2_seeded", "nsga2"),
                      ("nsga2_repair", "nsga2_seeded"), ("nsga2_repair_large", "nsga2"),
-                     ("nsga2_repair_large", "nsga2_repair")]:
+                     ("nsga2_repair_large", "nsga2_repair"),
+                     ("faps", "nsga2"), ("faps", "nsga2_repair"), ("faps", "nsga2_seeded"),
+                     ("sms_repair", "sms_nsga2"), ("sms_seeded", "sms_nsga2"),
+                     ("sms_repair", "sms_seeded"), ("sms_faps", "sms_nsga2"),
+                     ("sms_faps", "sms_repair"), ("sms_faps", "sms_seeded")]:
             ga = gd[gd.method == a].set_index("seed")["HV"]
             gb = gd[gd.method == b].set_index("seed")["HV"]
             common = ga.index.intersection(gb.index)

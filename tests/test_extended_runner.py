@@ -73,3 +73,25 @@ def test_bfdv_chromosome_reproduces_on_br():
         out = {}
         p._evaluate(np.concatenate([seq, ori]).astype(float), out)
         assert out["G"][1] == len(items) - len(packed)
+
+
+def test_portfolio_chromosomes_reproduce_their_layouts():
+    from experiments.extended_runner import constructive_chromosome, PORTFOLIO
+    items, c = load("SC1-250")
+    p = build_problem(items, c, "standard", None)
+    for k in PORTFOLIO:
+        seq, ori, packed = constructive_chromosome(items, c, "standard", k)
+        out = {}
+        p._evaluate(np.concatenate([seq, ori]).astype(float), out)
+        assert out["G"][1] == len(items) - len(packed)
+
+
+def test_faps_repair_is_inactive_until_switched_on():
+    items, c = load("SC2-50")
+    p = build_problem(items, c, "standard", "volume")
+    q = build_problem(items, c, "standard", None)
+    p.repair_active = False
+    for x in _chromosomes(50, 5, 9):
+        a, b = {}, {}
+        p._evaluate(x, a); q._evaluate(x, b)
+        assert np.allclose(a["F"], b["F"]) and np.allclose(a["G"], b["G"])
