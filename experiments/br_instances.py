@@ -19,7 +19,10 @@ Adaptation (stated in the manuscript):
   * CoM target. The container centre (the HyperDock target is absolute and does not
     fit a 5.87 m container); dry mass 5000 kg at the same point.
 
-Instances: classes BR1 (3 box types), BR4 (10), BR7 (20); problems 1 and 2 of each.
+Instances: classes BR1 (3 box types), BR4 (10), BR7 (20) from thpack1-7, and BR8 (30),
+BR9 (40), BR10 (50) from the extended set br.zip (S. Allen, Nottingham; OR-Library);
+problems 1 and 2 of each. The extended-set problems are stored as extracted in
+datasets/br/br8-10_p1-2.json (same token format, one string per problem).
 
 Usage: python experiments/br_instances.py
 """
@@ -58,6 +61,24 @@ def parse():
                 types.append(((l, w, h), (fl, fw, fh), c))
             probs.append({"num": num, "seed": seed, "container_LWH": (L, W, H), "types": types})
         out[int(name[-1])] = probs
+    return out
+
+
+def parse_extended():
+    raw = json.loads((OUT / "br8-10_p1-2.json").read_text())
+    out = {}
+    for cls, probs in raw.items():
+        lst = []
+        for text in probs:
+            head, body = text.split("|")
+            num, seed, L, W, H, n = map(int, head.split())
+            tok = list(map(int, body.split()))
+            types = []
+            for k in range(n):
+                _, l, fl, w, fw, h, fh, c = tok[8 * k:8 * k + 8]
+                types.append(((l, w, h), (fl, fw, fh), c))
+            lst.append({"num": num, "seed": seed, "container_LWH": (L, W, H), "types": types})
+        out[int(cls)] = lst
     return out
 
 
@@ -103,7 +124,8 @@ def build(cls, prob):
 
 def main():
     data = parse()
-    for cls in (1, 4, 7):
+    data.update(parse_extended())
+    for cls in (1, 4, 7, 8, 9, 10):
         for p in data[cls][:2]:
             inst = build(cls, p)
             (OUT / f"{inst['benchmark_id']}.json").write_text(json.dumps(inst, indent=1))

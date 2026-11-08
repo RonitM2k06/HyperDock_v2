@@ -54,7 +54,8 @@ def _vol(d):
 
 
 BR_DIR = ROOT / "datasets" / "br"
-BR = ["BR1-1", "BR1-2", "BR4-1", "BR4-2", "BR7-1", "BR7-2"]
+BR = ["BR1-1", "BR1-2", "BR4-1", "BR4-2", "BR7-1", "BR7-2",
+      "BR8-1", "BR8-2", "BR9-1", "BR9-2", "BR10-1", "BR10-2"]
 
 
 def _dataset(ds):
