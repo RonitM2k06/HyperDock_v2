@@ -171,7 +171,10 @@ def main():
                      ("faps", "nsga2"), ("faps", "nsga2_repair"), ("faps", "nsga2_seeded"),
                      ("sms_repair", "sms_nsga2"), ("sms_seeded", "sms_nsga2"),
                      ("sms_repair", "sms_seeded"), ("sms_faps", "sms_nsga2"),
-                     ("sms_faps", "sms_repair"), ("sms_faps", "sms_seeded")]:
+                     ("sms_faps", "sms_repair"), ("sms_faps", "sms_seeded"),
+                     ("faps", "nsga3"), ("faps", "ctaea"), ("faps", "brkga"),
+                     ("faps", "faps_single"), ("faps", "faps_norepair"),
+                     ("faps", "faps_a05"), ("faps", "faps_a20"), ("faps", "faps_a30")]:
             ga = gd[gd.method == a].set_index("seed")["HV"]
             gb = gd[gd.method == b].set_index("seed")["HV"]
             common = ga.index.intersection(gb.index)

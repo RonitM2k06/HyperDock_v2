@@ -1,0 +1,1382 @@
+{
+ "benchmark_id": "BR3-1",
+ "source": "Bischoff and Ratcliff (1995), OR-Library thpack3, problem 1 (seed 2502505)",
+ "box_types": 8,
+ "utilisation": 0.7987824372657409,
+ "com_target": [
+  1.165,
+  1.1,
+  2.935
+ ],
+ "containers": [
+  {
+   "dimensions_wdh_meters": [
+    2.33,
+    2.2,
+    5.87
+   ]
+  }
+ ],
+ "items": [
+  {
+   "item_id": "BR3-1-0",
+   "box_type": 8,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.95,
+    0.66,
+    0.31
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 37.305,
+   "priority": 28
+  },
+  {
+   "item_id": "BR3-1-1",
+   "box_type": 6,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    1.11,
+    0.7,
+    0.48
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 92.488,
+   "priority": 7
+  },
+  {
+   "item_id": "BR3-1-2",
+   "box_type": 3,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    0.92,
+    0.81,
+    0.55
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 81.718,
+   "priority": 28
+  },
+  {
+   "item_id": "BR3-1-3",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 48.896,
+   "priority": 36
+  },
+  {
+   "item_id": "BR3-1-4",
+   "box_type": 3,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    0.92,
+    0.81,
+    0.55
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 69.623,
+   "priority": 25
+  },
+  {
+   "item_id": "BR3-1-5",
+   "box_type": 7,
+   "category": "safety",
+   "dimensions_wdh_meters": [
+    0.98,
+    0.72,
+    0.46
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 106.036,
+   "priority": 60
+  },
+  {
+   "item_id": "BR3-1-6",
+   "box_type": 3,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    0.92,
+    0.81,
+    0.55
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 100.747,
+   "priority": 55
+  },
+  {
+   "item_id": "BR3-1-7",
+   "box_type": 7,
+   "category": "safety",
+   "dimensions_wdh_meters": [
+    0.98,
+    0.72,
+    0.46
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 152.594,
+   "priority": 44
+  },
+  {
+   "item_id": "BR3-1-8",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 29.27,
+   "priority": 31
+  },
+  {
+   "item_id": "BR3-1-9",
+   "box_type": 6,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    1.11,
+    0.7,
+    0.48
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 72.859,
+   "priority": 45
+  },
+  {
+   "item_id": "BR3-1-10",
+   "box_type": 5,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.2,
+    0.99,
+    0.73
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 133.897,
+   "priority": 38
+  },
+  {
+   "item_id": "BR3-1-11",
+   "box_type": 7,
+   "category": "safety",
+   "dimensions_wdh_meters": [
+    0.98,
+    0.72,
+    0.46
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 135.855,
+   "priority": 63
+  },
+  {
+   "item_id": "BR3-1-12",
+   "box_type": 2,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    1.1,
+    0.43,
+    0.25
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 13.687,
+   "priority": 61
+  },
+  {
+   "item_id": "BR3-1-13",
+   "box_type": 7,
+   "category": "safety",
+   "dimensions_wdh_meters": [
+    0.98,
+    0.72,
+    0.46
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 77.791,
+   "priority": 91
+  },
+  {
+   "item_id": "BR3-1-14",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 49.714,
+   "priority": 67
+  },
+  {
+   "item_id": "BR3-1-15",
+   "box_type": 5,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.2,
+    0.99,
+    0.73
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 154.7,
+   "priority": 11
+  },
+  {
+   "item_id": "BR3-1-16",
+   "box_type": 3,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    0.92,
+    0.81,
+    0.55
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 89.6,
+   "priority": 54
+  },
+  {
+   "item_id": "BR3-1-17",
+   "box_type": 2,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    1.1,
+    0.43,
+    0.25
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 10.343,
+   "priority": 23
+  },
+  {
+   "item_id": "BR3-1-18",
+   "box_type": 5,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.2,
+    0.99,
+    0.73
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 124.546,
+   "priority": 49
+  },
+  {
+   "item_id": "BR3-1-19",
+   "box_type": 2,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    1.1,
+    0.43,
+    0.25
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 8.025,
+   "priority": 47
+  },
+  {
+   "item_id": "BR3-1-20",
+   "box_type": 2,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    1.1,
+    0.43,
+    0.25
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 10.675,
+   "priority": 79
+  },
+  {
+   "item_id": "BR3-1-21",
+   "box_type": 5,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.2,
+    0.99,
+    0.73
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 121.996,
+   "priority": 15
+  },
+  {
+   "item_id": "BR3-1-22",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 44.855,
+   "priority": 40
+  },
+  {
+   "item_id": "BR3-1-23",
+   "box_type": 8,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.95,
+    0.66,
+    0.31
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 28.57,
+   "priority": 61
+  },
+  {
+   "item_id": "BR3-1-24",
+   "box_type": 8,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.95,
+    0.66,
+    0.31
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 29.075,
+   "priority": 90
+  },
+  {
+   "item_id": "BR3-1-25",
+   "box_type": 2,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    1.1,
+    0.43,
+    0.25
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 11.393,
+   "priority": 35
+  },
+  {
+   "item_id": "BR3-1-26",
+   "box_type": 7,
+   "category": "safety",
+   "dimensions_wdh_meters": [
+    0.98,
+    0.72,
+    0.46
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 121.233,
+   "priority": 17
+  },
+  {
+   "item_id": "BR3-1-27",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 54.334,
+   "priority": 81
+  },
+  {
+   "item_id": "BR3-1-28",
+   "box_type": 3,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    0.92,
+    0.81,
+    0.55
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 91.726,
+   "priority": 51
+  },
+  {
+   "item_id": "BR3-1-29",
+   "box_type": 6,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    1.11,
+    0.7,
+    0.48
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 103.219,
+   "priority": 24
+  },
+  {
+   "item_id": "BR3-1-30",
+   "box_type": 4,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.81,
+    0.33,
+    0.28
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 10.858,
+   "priority": 34
+  },
+  {
+   "item_id": "BR3-1-31",
+   "box_type": 8,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.95,
+    0.66,
+    0.31
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 29.743,
+   "priority": 72
+  },
+  {
+   "item_id": "BR3-1-32",
+   "box_type": 8,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.95,
+    0.66,
+    0.31
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 25.443,
+   "priority": 52
+  },
+  {
+   "item_id": "BR3-1-33",
+   "box_type": 8,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.95,
+    0.66,
+    0.31
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 44.299,
+   "priority": 94
+  },
+  {
+   "item_id": "BR3-1-34",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 52.672,
+   "priority": 22
+  },
+  {
+   "item_id": "BR3-1-35",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 59.767,
+   "priority": 18
+  },
+  {
+   "item_id": "BR3-1-36",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 54.852,
+   "priority": 56
+  },
+  {
+   "item_id": "BR3-1-37",
+   "box_type": 7,
+   "category": "safety",
+   "dimensions_wdh_meters": [
+    0.98,
+    0.72,
+    0.46
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 67.717,
+   "priority": 90
+  },
+  {
+   "item_id": "BR3-1-38",
+   "box_type": 4,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.81,
+    0.33,
+    0.28
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 6.13,
+   "priority": 13
+  },
+  {
+   "item_id": "BR3-1-39",
+   "box_type": 5,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.2,
+    0.99,
+    0.73
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 123.568,
+   "priority": 91
+  },
+  {
+   "item_id": "BR3-1-40",
+   "box_type": 7,
+   "category": "safety",
+   "dimensions_wdh_meters": [
+    0.98,
+    0.72,
+    0.46
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 100.649,
+   "priority": 23
+  },
+  {
+   "item_id": "BR3-1-41",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 44.906,
+   "priority": 35
+  },
+  {
+   "item_id": "BR3-1-42",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 43.508,
+   "priority": 50
+  },
+  {
+   "item_id": "BR3-1-43",
+   "box_type": 8,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.95,
+    0.66,
+    0.31
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 21.782,
+   "priority": 67
+  },
+  {
+   "item_id": "BR3-1-44",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 55.523,
+   "priority": 7
+  },
+  {
+   "item_id": "BR3-1-45",
+   "box_type": 7,
+   "category": "safety",
+   "dimensions_wdh_meters": [
+    0.98,
+    0.72,
+    0.46
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 68.72,
+   "priority": 9
+  },
+  {
+   "item_id": "BR3-1-46",
+   "box_type": 5,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.2,
+    0.99,
+    0.73
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 112.053,
+   "priority": 14
+  },
+  {
+   "item_id": "BR3-1-47",
+   "box_type": 4,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.81,
+    0.33,
+    0.28
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 7.359,
+   "priority": 9
+  },
+  {
+   "item_id": "BR3-1-48",
+   "box_type": 5,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.2,
+    0.99,
+    0.73
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 227.493,
+   "priority": 35
+  },
+  {
+   "item_id": "BR3-1-49",
+   "box_type": 4,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.81,
+    0.33,
+    0.28
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 7.726,
+   "priority": 29
+  },
+  {
+   "item_id": "BR3-1-50",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 61.716,
+   "priority": 2
+  },
+  {
+   "item_id": "BR3-1-51",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 68.061,
+   "priority": 91
+  },
+  {
+   "item_id": "BR3-1-52",
+   "box_type": 2,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    1.1,
+    0.43,
+    0.25
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 10.963,
+   "priority": 21
+  },
+  {
+   "item_id": "BR3-1-53",
+   "box_type": 3,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    0.92,
+    0.81,
+    0.55
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 81.572,
+   "priority": 12
+  },
+  {
+   "item_id": "BR3-1-54",
+   "box_type": 4,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.81,
+    0.33,
+    0.28
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 8.735,
+   "priority": 7
+  },
+  {
+   "item_id": "BR3-1-55",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 65.568,
+   "priority": 13
+  },
+  {
+   "item_id": "BR3-1-56",
+   "box_type": 6,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    1.11,
+    0.7,
+    0.48
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 137.315,
+   "priority": 10
+  },
+  {
+   "item_id": "BR3-1-57",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 66.521,
+   "priority": 7
+  },
+  {
+   "item_id": "BR3-1-58",
+   "box_type": 7,
+   "category": "safety",
+   "dimensions_wdh_meters": [
+    0.98,
+    0.72,
+    0.46
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 108.471,
+   "priority": 46
+  },
+  {
+   "item_id": "BR3-1-59",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 48.852,
+   "priority": 13
+  },
+  {
+   "item_id": "BR3-1-60",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 56.299,
+   "priority": 61
+  },
+  {
+   "item_id": "BR3-1-61",
+   "box_type": 5,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.2,
+    0.99,
+    0.73
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 192.179,
+   "priority": 2
+  },
+  {
+   "item_id": "BR3-1-62",
+   "box_type": 4,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.81,
+    0.33,
+    0.28
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 7.911,
+   "priority": 91
+  },
+  {
+   "item_id": "BR3-1-63",
+   "box_type": 4,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.81,
+    0.33,
+    0.28
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 13.82,
+   "priority": 41
+  },
+  {
+   "item_id": "BR3-1-64",
+   "box_type": 4,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.81,
+    0.33,
+    0.28
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 9.674,
+   "priority": 41
+  },
+  {
+   "item_id": "BR3-1-65",
+   "box_type": 8,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.95,
+    0.66,
+    0.31
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 32.533,
+   "priority": 89
+  },
+  {
+   "item_id": "BR3-1-66",
+   "box_type": 8,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.95,
+    0.66,
+    0.31
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 21.654,
+   "priority": 97
+  },
+  {
+   "item_id": "BR3-1-67",
+   "box_type": 4,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.81,
+    0.33,
+    0.28
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 6.395,
+   "priority": 12
+  },
+  {
+   "item_id": "BR3-1-68",
+   "box_type": 2,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    1.1,
+    0.43,
+    0.25
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 8.589,
+   "priority": 41
+  },
+  {
+   "item_id": "BR3-1-69",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 42.708,
+   "priority": 12
+  },
+  {
+   "item_id": "BR3-1-70",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 34.447,
+   "priority": 97
+  },
+  {
+   "item_id": "BR3-1-71",
+   "box_type": 5,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.2,
+    0.99,
+    0.73
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 147.021,
+   "priority": 46
+  },
+  {
+   "item_id": "BR3-1-72",
+   "box_type": 7,
+   "category": "safety",
+   "dimensions_wdh_meters": [
+    0.98,
+    0.72,
+    0.46
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 63.83,
+   "priority": 63
+  },
+  {
+   "item_id": "BR3-1-73",
+   "box_type": 3,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    0.92,
+    0.81,
+    0.55
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "mass_kg": 89.102,
+   "priority": 31
+  },
+  {
+   "item_id": "BR3-1-74",
+   "box_type": 6,
+   "category": "hardware",
+   "dimensions_wdh_meters": [
+    1.11,
+    0.7,
+    0.48
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 72.422,
+   "priority": 59
+  },
+  {
+   "item_id": "BR3-1-75",
+   "box_type": 1,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    1.08,
+    0.76,
+    0.3
+   ],
+   "allowed_rotations": [
+    1,
+    3
+   ],
+   "mass_kg": 42.229,
+   "priority": 7
+  },
+  {
+   "item_id": "BR3-1-76",
+   "box_type": 4,
+   "category": "consumable",
+   "dimensions_wdh_meters": [
+    0.81,
+    0.33,
+    0.28
+   ],
+   "allowed_rotations": [
+    0,
+    1,
+    3,
+    5
+   ],
+   "mass_kg": 7.5,
+   "priority": 73
+  }
+ ]
+}

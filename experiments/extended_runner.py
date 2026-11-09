@@ -56,6 +56,8 @@ def _vol(d):
 BR_DIR = ROOT / "datasets" / "br"
 BR = ["BR1-1", "BR1-2", "BR4-1", "BR4-2", "BR7-1", "BR7-2",
       "BR8-1", "BR8-2", "BR9-1", "BR9-2", "BR10-1", "BR10-2"]
+BR_EXTRA = ["BR2-1", "BR2-2", "BR3-1", "BR3-2", "BR5-1", "BR5-2", "BR6-1", "BR6-2"]
+SWEEP = ["SC1-50", "SC1-100", "SC2-100", "SC2-500", "BR1-1", "BR4-1", "BR7-2", "BR10-1"]
 
 
 def _dataset(ds):
@@ -201,6 +203,75 @@ def constructive_chromosome(items, cdims, decoder, key):
     return np.array(seq), ori, d.packed_items
 
 
+def _constrained_order(F, G):
+    """Indices sorted best first: feasible by non-dominated rank then crowding (desc),
+    infeasible after them by total constraint violation (asc). NSGA-II's rule."""
+    from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
+    from pymoo.operators.survival.rank_and_crowding.metrics import calc_crowding_distance
+    cv = np.maximum(G, 0).sum(axis=1)
+    feas = np.where(cv <= 0)[0]
+    infeas = np.where(cv > 0)[0]
+    order = []
+    if len(feas):
+        for front in NonDominatedSorting().do(F[feas]):
+            idx = feas[front]
+            cd = calc_crowding_distance(F[idx]) if len(idx) > 2 else np.full(len(idx), np.inf)
+            order += list(idx[np.argsort(-cd, kind="stable")])
+    order += list(infeas[np.argsort(cv[infeas], kind="stable")])
+    return np.array(order, dtype=int)
+
+
+def run_brkga(prob, n, pop, budget, seed, elite=0.2, mutant=0.15, rho=0.7):
+    """Multi-objective biased random-key GA (Goncalves and Resende 2013 encoding:
+    sequence = argsort of the first n keys, orientation gene = 1 + floor(6 * key)),
+    with elites chosen by NSGA-II's constrained rank and crowding. Runs until the
+    evaluation budget is used, so the budget matches NSGA-II's."""
+    rng = np.random.default_rng(seed)
+
+    def evaluate(K):
+        F, G = [], []
+        for k in K:
+            x = np.concatenate([np.argsort(k[:n], kind="stable"),
+                                np.minimum(6, 1 + np.floor(6 * k[n:]))]).astype(float)
+            out = {}
+            prob._evaluate(x, out)
+            F.append(out["F"]); G.append(out["G"])
+        return np.array(F, float), np.array(G, float)
+
+    K = rng.random((pop, 2 * n))
+    F, G = evaluate(K)
+    used = pop
+    ne, nm = max(1, int(round(elite * pop))), max(1, int(round(mutant * pop)))
+    while used < budget:
+        o = _constrained_order(F, G)
+        K, F, G = K[o], F[o], G[o]
+        n_child = min(pop - ne - nm, budget - used)
+        n_mut = min(nm, budget - used - n_child)
+        a = K[rng.integers(0, ne, n_child)]
+        b = K[rng.integers(ne, pop, n_child)]
+        child = np.where(rng.random((n_child, 2 * n)) < rho, a, b)
+        newK = np.vstack([child, rng.random((n_mut, 2 * n))])
+        nF, nG = evaluate(newK)
+        used += len(newK)
+        K = np.vstack([K[:ne], newK, K[ne:]])[:max(pop, ne + len(newK))]
+        F = np.vstack([F[:ne], nF, F[ne:]])[:len(K)]
+        G = np.vstack([G[:ne], nG, G[ne:]])[:len(K)]
+    return used
+
+
+def faps_variant(base):
+    """FAPS variant name -> (portfolio keys, activation fraction or None for never)."""
+    if base == "faps":
+        return list(PORTFOLIO), 0.1
+    if base == "faps_single":
+        return ["volume"], 0.1
+    if base == "faps_norepair":
+        return list(PORTFOLIO), None
+    if base.startswith("faps_a"):
+        return list(PORTFOLIO), int(base[6:]) / 100.0
+    raise ValueError(base)
+
+
 def run_job(job):
     ds, method, seed, decoder, out_dir = job
     out_dir = Path(out_dir)
@@ -236,17 +307,20 @@ def run_job(job):
         base = method[4:] if method.startswith("sms_") else method
         base = {"": "nsga2", "repair": "nsga2_repair", "seeded": "nsga2_seeded", "faps": "faps"}.get(base, base)
         portfolio, faps_mode = None, None
-        if base == "faps":
+        is_faps = base.startswith("faps")
+        if is_faps:
+            keys, act_frac = faps_variant(base)
             # Feasibility-adaptive portfolio seeding (FAPS): one constructive seed per
             # portfolio order, and the volume repair held in reserve. The repair is switched
             # on only if no feasible packing has been evaluated after 10% of the generations.
-            portfolio = [constructive_chromosome(items, cdims, decoder, k) for k in PORTFOLIO]
+            portfolio = [constructive_chromosome(items, cdims, decoder, k) for k in keys]
             faps_mode = {"feasible_seeds": int(sum(len(pk) == n for _, _, pk in portfolio)),
                          "repair_activated_at_gen": None}
-        repair = {"nsga2": None, "nsga2_seeded": None, "random": None, "faps": "volume",
-                  "nsga2_repair": "volume", "nsga2_repair_large": "large"}[base]
+        repair = "volume" if is_faps else {
+            "nsga2": None, "nsga2_seeded": None, "random": None, "nsga3": None, "ctaea": None,
+            "brkga": None, "nsga2_repair": "volume", "nsga2_repair_large": "large"}[base]
         prob = build_problem(items, cdims, decoder, repair, com_target(ds))
-        if base == "faps":
+        if is_faps:
             prob.repair_active = False
         store = {"X": [], "F": [], "G": []}
         orig = prob._evaluate
@@ -263,13 +337,15 @@ def run_job(job):
             n_eval = int(ref["n_eval"])
             for x in CargoSampling(n_items=n)._do(prob, n_eval):
                 prob._evaluate(x, {})
+        elif base == "brkga":
+            n_eval = run_brkga(prob, n, pop, pop * gens, seed)
         else:
             sampling = CargoSampling(n_items=n)
             seeds = []
             if base == "nsga2_seeded":
                 seq, ori, _ = bfdv_chromosome(items, cdims, decoder)
                 seeds = [(seq, ori)]
-            elif base == "faps":
+            elif is_faps:
                 seen = set()
                 for seq, ori, _ in portfolio:
                     key = (tuple(seq), tuple(ori))
@@ -288,11 +364,21 @@ def run_job(job):
             if method.startswith("sms_"):
                 from pymoo.algorithms.moo.sms import SMSEMOA
                 alg = SMSEMOA(**ops)
+            elif base in ("nsga3", "ctaea"):
+                from pymoo.util.ref_dirs import get_reference_directions
+                rd = get_reference_directions("das-dennis", 2, n_partitions=pop - 1)
+                if base == "nsga3":
+                    from pymoo.algorithms.moo.nsga3 import NSGA3
+                    alg = NSGA3(ref_dirs=rd, **ops)
+                else:
+                    from pymoo.algorithms.moo.ctaea import CTAEA
+                    ops.pop("pop_size")
+                    alg = CTAEA(ref_dirs=rd, **ops)
             else:
                 alg = NSGA2(**ops)
             callback = None
-            if base == "faps":
-                check_gen = max(1, int(round(0.1 * gens)))
+            if is_faps and act_frac is not None:
+                check_gen = max(1, int(round(act_frac * gens)))
 
                 def callback(algorithm):
                     if (not prob.repair_active and algorithm.n_gen >= check_gen
@@ -309,7 +395,7 @@ def run_job(job):
     raw_p.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(raw_p, X=X, F=F, G=G, n_items=np.array(n))
     meta = {"dataset": ds, "method": method, "seed": seed, "n_items": n, "decoder": decoder,
-            "n_eval": n_eval, "decodes": decodes + (len(PORTFOLIO) if method.endswith("faps") else 0),
+            "n_eval": n_eval, "decodes": decodes + (len(portfolio) if locals().get("portfolio") else 0),
             "runtime_s": runtime, "faps_mode": locals().get("faps_mode"),
             "feasible_evaluations": int(np.all(G <= 0, axis=1).sum()),
             "python": platform.python_version(), "platform": platform.platform(),
@@ -365,15 +451,44 @@ def jobs_for(stage):
                   for s in seeds_for(d, extended=True)]
         phase2 = [(d, "random", s, "standard", out) for d in dss for s in seeds_for(d, extended=True)]
         return [phase1, phase2]
+    if stage == "rev_baselines":
+        # Reviewer revision: stronger baselines (NSGA-III, C-TAEA, multi-objective BRKGA)
+        out_s = str(ROOT / "experiments" / "full_matched")
+        out_b = str(ROOT / "experiments" / "br")
+        p1 = [(d, m, s, "standard", out_s) for d in SC12 for m in ("nsga3", "ctaea", "brkga")
+              for s in range(1, 11)]
+        p1 += [(d, m, s, "standard", out_b) for d in BR for m in ("nsga3", "ctaea", "brkga")
+               for s in range(1, 11)]
+        return [p1]
+    if stage == "rev_br":
+        # Reviewer revision: Bischoff-Ratcliff classes BR2, BR3, BR5, BR6 (problems 1-2)
+        out = str(ROOT / "experiments" / "br")
+        p1 = [(d, m, s, "standard", out) for d in BR_EXTRA
+              for m in ("nsga2", "nsga2_repair", "nsga2_seeded", "faps", "brkga")
+              for s in range(1, 11)] + [(d, "bfdv", 0, "standard", out) for d in BR_EXTRA]
+        return [p1]
+    if stage == "rev_ablation":
+        # Reviewer revision: FAPS component ablation and activation-point sweep
+        out = str(ROOT / "experiments" / "faps_ablation")
+        p1 = [(d, m, s, "standard", out) for d in SWEEP
+              for m in ("faps", "faps_single", "faps_norepair", "faps_a05", "faps_a20", "faps_a30")
+              for s in range(1, 11)]
+        return [p1]
+    if stage == "rev_contact":
+        out = str(ROOT / "experiments" / "contact")
+        return [[(d, "faps", s, "contact", out) for d in ["SC1-50", "SC2-50", "SC1-100", "SC2-100"]
+                 for s in range(1, 11)]]
     raise ValueError(stage)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--stage", required=True, choices=["new_methods", "contact", "more_seeds", "br", "faps", "sms"])
+    ap.add_argument("--stage", required=True, choices=["new_methods", "contact", "more_seeds", "br", "faps", "sms",
+                                                     "rev_baselines", "rev_br", "rev_ablation", "rev_contact", "rev_all"])
     ap.add_argument("--workers", type=int, default=12)
     a = ap.parse_args()
-    for phase in jobs_for(a.stage):
+    stages = ["rev_br", "rev_contact", "rev_ablation", "rev_baselines"] if a.stage == "rev_all" else [a.stage]
+    for phase in [ph for st in stages for ph in jobs_for(st)]:
         # longest jobs first, for better load balance
         phase.sort(key=lambda j: -len(load(j[0])[0]))
         print(f"{len(phase)} runs, {a.workers} workers", flush=True)

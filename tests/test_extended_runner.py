@@ -95,3 +95,41 @@ def test_faps_repair_is_inactive_until_switched_on():
         a, b = {}, {}
         p._evaluate(x, a); q._evaluate(x, b)
         assert np.allclose(a["F"], b["F"]) and np.allclose(a["G"], b["G"])
+
+
+# --- reviewer-revision additions -------------------------------------------------
+
+def test_faps_variants_map_to_components():
+    from experiments.extended_runner import faps_variant, PORTFOLIO
+    assert faps_variant("faps") == (list(PORTFOLIO), 0.1)
+    assert faps_variant("faps_single") == (["volume"], 0.1)
+    assert faps_variant("faps_norepair") == (list(PORTFOLIO), None)
+    assert faps_variant("faps_a05")[1] == 0.05 and faps_variant("faps_a30")[1] == 0.30
+
+
+def test_constrained_order_puts_feasible_first():
+    import numpy as np
+    from experiments.extended_runner import _constrained_order
+    F = np.array([[1.0, 1.0], [0.0, 0.0], [2.0, -1.0], [0.5, 0.5]])
+    G = np.array([[0, 0], [3.0, 1.0], [0, 0], [0.1, 1.0]])
+    o = list(_constrained_order(F, G))
+    assert set(o[:2]) == {0, 2} and o[2:] == [3, 1]
+
+
+def test_brkga_uses_exact_budget(monkeypatch, tmp_path):
+    import json
+    monkeypatch.setenv("HD_SMOKE_GENS", "3")
+    from experiments.extended_runner import run_job
+    stem, _ = run_job(("SC1-50", "brkga", 1, "standard", str(tmp_path)))
+    meta = json.loads((tmp_path / "runs" / f"{stem}.json").read_text())
+    assert meta["n_eval"] == 20 * 3 and meta["decodes"] == 60
+
+
+def test_norepair_never_activates(monkeypatch, tmp_path):
+    import json
+    monkeypatch.setenv("HD_SMOKE_GENS", "4")
+    from experiments.extended_runner import run_job
+    stem, _ = run_job(("SC2-100", "faps_norepair", 1, "standard", str(tmp_path)))
+    meta = json.loads((tmp_path / "runs" / f"{stem}.json").read_text())
+    assert meta["faps_mode"]["repair_activated_at_gen"] is None
+    assert meta["decodes"] == meta["n_eval"] + 4

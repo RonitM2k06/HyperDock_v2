@@ -125,7 +125,7 @@ def build(cls, prob):
 def main():
     data = parse()
     data.update(parse_extended())
-    for cls in (1, 4, 7, 8, 9, 10):
+    for cls in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10):
         for p in data[cls][:2]:
             inst = build(cls, p)
             (OUT / f"{inst['benchmark_id']}.json").write_text(json.dumps(inst, indent=1))
