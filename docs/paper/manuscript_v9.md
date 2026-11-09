@@ -4,37 +4,24 @@
 
 ## Abstract
 
-Stowing cargo in a spacecraft logistics module couples a three-dimensional packing problem with two conflicting goals: keeping the centre of mass (CoM) near its target and keeping items accessible to the crew. Decoder-based multi-objective evolutionary algorithms are a natural fit, but we show that on heterogeneous cargo they rarely return a valid packing at all. Plain NSGA-II succeeds in at most 4 of 30 seeds on five of eight synthetic instances, and never on Bischoff–Ratcliff instances with 20 or more box types. Its apparent front quality is therefore largely a statement about feasibility.
+Stowing cargo in a spacecraft logistics module is a three-dimensional packing problem with two conflicting goals: keep the centre of mass (CoM) near its target and keep items reachable by the crew. Decoder-based multi-objective evolutionary algorithms fit this problem, yet on heterogeneous cargo they rarely return a valid packing. Plain NSGA-II succeeds in at most 4 of 30 seeds on five of eight synthetic instances, and never on Bischoff–Ratcliff instances with 20 or more box types. The two usual remedies each fail somewhere. A decreasing-volume Baldwinian repair restores feasibility but trades accessibility for compactness, and seeding one constructive solution helps only when that solution is feasible.
 
-Two standard remedies inject a constructive packing order. A decreasing-volume Baldwinian repair restores feasibility but biases solutions toward compactness at the expense of accessibility. Seeding a single constructive solution preserves front quality, but fails when the constructive solution is itself infeasible. Neither is uniformly best, and on near-homogeneous cargo both can do worse than no prior at all.
-
-We propose **feasibility-adaptive portfolio seeding (FAPS)**. It seeds the population with best-fit-decreasing constructions under four orders, and holds the repair in reserve until the search has found no valid packing within 10% of its generations. We evaluate FAPS against plain NSGA-II, the repair, single seeding, random search and three deterministic heuristics on 20 instances: eight synthetic ones with 50–500 items and 30 seeds each, and twelve adapted from the Bischoff–Ratcliff benchmark, classes BR1–BR10. The evaluation uses matched evaluation budgets and about 3,100 runs.
-
-FAPS has the best mean rank (1.35 against 2.30–3.80; Friedman p = 4.5 × 10⁻⁸). It has a higher mean hypervolume than every competitor on 16 to 20 of the 20 instances, and it is significantly worse than a competitor on only one. Among seeds where both methods are feasible, it removes the repair's accessibility penalty. The findings hold under a second optimiser, SMS-EMOA, and under perturbed objective constants. We also report what does not hold, including a contact-constrained decoder that lowers feasibility for every method. We argue that evaluations of packing optimisers should report feasibility separately from front quality.
+We propose feasibility-adaptive portfolio seeding (FAPS), which seeds the population with best-fit-decreasing constructions under four orders and switches the repair on only if no valid packing has appeared after 10% of the generations. On 20 instances (eight synthetic with 50–500 items, twelve adapted from Bischoff–Ratcliff classes BR1–BR10) and about 3,100 runs at matched evaluation budgets, FAPS has the best mean rank (1.35 against 2.30–3.80; Friedman p = 4.5 × 10⁻⁸). It is significantly worse than a competitor on one instance, and on seeds where both methods are feasible it recovers the accessibility the repair gives up. The results hold under SMS-EMOA and under perturbed objective constants. A contact-constrained decoder lowers feasibility for every method. We recommend that packing studies report feasibility separately from front quality.
 
 **Keywords:** spacecraft logistics; three-dimensional packing; container loading; multi-objective evolutionary algorithms; constraint handling; population seeding; repair; hypervolume
 
 ## 1. Introduction
 
-Cargo for a crewed spacecraft must be packed so that the vehicle's centre of mass stays within tolerance. It must also stay retrievable by a crew who reach in through an access face and may have to remove items to reach the one they need. The two goals conflict. Compact packings that keep the CoM on target tend to bury items, and accessible packings tend to load mass unevenly. Multi-objective evolutionary algorithms (MOEAs) suit this problem because they return a set of compromises rather than a single packing.
+Cargo for a crewed spacecraft must be packed so that the vehicle's centre of mass stays within tolerance. It must also stay retrievable by a crew who reach in through an access face and may have to remove items to reach the one they need. The two goals conflict. Compact packings that keep the CoM on target tend to bury items, and accessible packings tend to load mass unevenly. Multi-objective evolutionary algorithms (MOEAs) suit the problem because they return a set of compromises, from which an operator can pick.
 
-A decoder-based MOEA searches over packing sequences and orientations, and a placement heuristic converts each chromosome into a layout. This design is standard in container loading (Gonçalves and Resende, 2013), but it has a weakness that is easy to overlook. The decoder may fail to place every item, so a chromosome can describe an invalid packing. Constrained-domination selection (Deb, 2000; Deb et al., 2002) steers the search toward feasibility but does not guarantee it. We find that for heterogeneous cargo it usually fails. An evaluation that compares fronts without separating feasibility then compares invalid layouts, or rewards whichever method finds any valid one.
+A decoder-based MOEA searches over packing sequences and orientations, and a placement heuristic converts each chromosome into a layout. This design is standard in container loading (Gonçalves and Resende, 2013). Its weak point is that the decoder may fail to place every item, so a chromosome can describe an invalid packing. Constrained-domination selection (Deb, 2000; Deb et al., 2002) steers the search toward feasibility but does not guarantee it. We find that for heterogeneous cargo it usually fails. An evaluation that compares fronts without separating feasibility then compares invalid layouts, or rewards whichever method finds any valid one.
 
-Constructive heuristics such as best-fit-decreasing by volume handle feasibility well but return a single layout. Their order can be injected into the MOEA at decoding time, by repairing failed chromosomes (Salcedo-Sanz, 2009), or at initialisation, by seeding the population (Friedrich and Wagner, 2015). We show that both remedies work in some regimes and fail in others:
+Constructive heuristics such as best-fit-decreasing by volume handle feasibility well but return a single layout. Their order can be injected into the MOEA at decoding time, by repairing failed chromosomes (Salcedo-Sanz, 2009), or at initialisation, by seeding the population (Friedrich and Wagner, 2015). We find that each remedy works in some regimes and fails in others. Repair restores feasibility everywhere but pulls the front toward CoM compactness and away from accessibility. Seeding gives better fronts when the seed is feasible and does little when it is not. On near-homogeneous cargo, either can do worse than no prior at all. A method that adapts to the instance is the obvious next step, and it is what we propose. The contributions are:
 
-- **Repair** restores feasibility everywhere, but shifts the front toward CoM compactness at the expense of accessibility.
-- **Seeding** produces better fronts when the seed is feasible, and does little when it is not.
-- **On near-homogeneous cargo,** both can be worse than no prior at all.
-
-These observations motivate a method that adapts to the instance. The contributions of this paper are:
-
-1. **Feasibility-adaptive portfolio seeding (FAPS)** (Section 3.5). It seeds NSGA-II with constructive solutions under several orders and activates a volume-ordered repair only if the search finds no valid packing early on. On 20 instances, FAPS has the best mean rank and is significantly worse than a competitor on only one instance (Section 6.2).
-2. **A diagnosis of why the standard remedies fall short** (Sections 6.1, 6.3 and 6.4):
-   - On seeds where both methods are feasible, the repair does not improve hypervolume; it moves the front.
-   - Single seeding wins at scale but fails when its seed is infeasible.
-   - On a public benchmark, the value of any prior depends on cargo heterogeneity.
-3. **An evaluation protocol that separates feasibility from front quality** (Section 4). It uses matched evaluation budgets, feasible-run rates, pooled feasible reference fronts, seed-paired tests with family-wise correction, and a comparison restricted to seeds on which both methods are feasible. It also includes an instance-level Friedman test, a second optimiser, an ablation, a sensitivity analysis and a contact-constrained decoder.
-4. **A corrected and tested batched GPU scorer** (Sections 5 and 6.9). The original scorer treated padding rows as items, which biased the accessibility objective of every infeasible layout.
+1. Feasibility-adaptive portfolio seeding (FAPS) (Section 3.5), which seeds NSGA-II with constructive solutions under several orders and activates a volume-ordered repair only if the search finds no valid packing early on. On 20 instances, FAPS has the best mean rank and is significantly worse than a competitor on only one instance (Section 6.2).
+2. An account of where the standard remedies fall short (Sections 6.1, 6.3 and 6.4). On seeds where both methods are feasible, the repair leaves hypervolume unchanged and moves the front along the trade-off. Single seeding wins at scale and fails when its seed is infeasible. On a public benchmark, whether any prior helps depends on how heterogeneous the cargo is.
+3. An evaluation protocol that reports feasibility separately from front quality (Section 4). It uses matched evaluation budgets, feasible-run rates, pooled feasible reference fronts, seed-paired tests with family-wise correction, and a comparison restricted to seeds on which both methods are feasible. It also includes an instance-level Friedman test, a second optimiser, an ablation, a sensitivity analysis and a contact-constrained decoder.
+4. A corrected and tested batched GPU scorer (Sections 5 and 6.9). The original scorer treated padding rows as items, which biased the accessibility objective of every infeasible layout.
 
 We do not validate the accessibility surrogate against crew data or model launch loads. Section 8 states these and other limits.
 
@@ -44,9 +31,9 @@ We do not validate the accessibility surrogate against crew data or model launch
 
 **Three-dimensional packing heuristics.** Martello, Pisinger and Vigo (2000) established exact and heuristic methods for three-dimensional bin packing. Crainic, Perboli and Tadei (2008) introduced Extreme Points (EP) as placement candidates, which our decoder uses. Parreño, Alvarez-Valdes, Tamarit and Oliveira (2008) use maximal spaces instead. Gonçalves and Resende (2013) encode a packing as a sequence and an orientation vector decoded by a placement heuristic, evolved with a biased random-key genetic algorithm. Our representation follows this decoder-based design.
 
-**Space cargo.** Cargo accommodation for the International Space Station has been supported by an operational tool, CAST, which combines global optimisation with heuristics and balancing rules (Fasano, Lavopa, Negri and Vola, 2015). Fasano (2014) treats non-standard packing problems from this domain. Ho (2023) reviews space logistics optimisation at the campaign and network level. We found no study that pairs a CoM objective with an accessibility objective under an EP decoder and compares methods under a matched budget. This reflects our search, not a guarantee that none exists.
+**Space cargo.** Cargo accommodation for the International Space Station has been supported by an operational tool, CAST, which combines global optimisation with heuristics and balancing rules (Fasano, Lavopa, Negri and Vola, 2015). Fasano (2014) treats non-standard packing problems from this domain. Ho (2023) reviews space logistics optimisation at the campaign and network level. We did not find a study that pairs a CoM objective with an accessibility objective under an EP decoder and compares methods at a matched budget, though our search may have missed one.
 
-**Constraint handling, repair and seeding.** NSGA-II (Deb et al., 2002) handles constraints by constrained domination, following Deb's (2000) feasibility rules. Repair maps an infeasible solution to a feasible or less infeasible one, and Salcedo-Sanz (2009) surveys repair methods as constraint-handling techniques. When the repaired phenotype is evaluated but not written back to the genotype, the repair is Baldwinian rather than Lamarckian (Whitley, Gordon and Mathias, 1994). Seeding inserts known good solutions into the initial population. Friedrich and Wagner (2015) show that it can speed up MOEAs considerably, and also that it can bias the final population. FAPS combines a portfolio of seeds with a repair that is activated only on evidence of infeasibility. We use the pymoo implementations of NSGA-II and SMS-EMOA (Blank and Deb, 2020).
+**Constraint handling, repair and seeding.** NSGA-II (Deb et al., 2002) handles constraints by constrained domination, following Deb's (2000) feasibility rules. Repair maps an infeasible solution to a feasible or less infeasible one, and Salcedo-Sanz (2009) surveys repair methods as constraint-handling techniques. A repair whose phenotype is evaluated but not written back to the genotype is called Baldwinian; one that writes it back is Lamarckian (Whitley, Gordon and Mathias, 1994). Seeding inserts known good solutions into the initial population. Friedrich and Wagner (2015) show that it can speed up MOEAs considerably, and also that it can bias the final population. FAPS combines a portfolio of seeds with a repair that is activated only on evidence of infeasibility. We use the pymoo implementations of NSGA-II and SMS-EMOA (Blank and Deb, 2020).
 
 **Evaluation methodology.** Hypervolume (Zitzler and Thiele, 1999) and the wider methodology of quality indicators (Zitzler, Thiele, Laumanns, Fonseca and da Fonseca, 2003) underpin our front comparisons. For comparing stochastic algorithms over several problems we follow Derrac, García, Molina and Herrera (2011): per-problem nonparametric tests with a family-wise correction, here Holm's (1979) procedure, together with a Friedman test on mean ranks over problems. Cliff's (1993) δ serves as the effect size.
 
@@ -70,31 +57,27 @@ A layout is feasible when every item is placed. The constraints are g₁ = total
 
 **f₂, accessibility (maximise; implemented as minimising −CASC).** For each packed item i, CASC_i = exp(−c_i), with c_i = c_reach + c_occ + c_ext:
 
-- **Reach:** c_reach = (z_i / L_arm)² with L_arm = 0.75 m.
-- **Occlusion:** c_occ = λ(1 − v_i) with λ = 1, where v_i is the visible fraction of item i's footprint on a 10 × 10 grid, counting only items nearer the access face.
-- **Extraction:** c_ext = Σ_j ρ_j (C_grasp + κ m_j), summed over the transitive blockers j of item i, with C_grasp = 2, κ = 0.05 kg⁻¹, and ρ_j = 0.4 for consumable or waste items and 1 otherwise.
+- Reach: c_reach = (z_i / L_arm)² with L_arm = 0.75 m.
+- Occlusion: c_occ = λ(1 − v_i) with λ = 1, where v_i is the visible fraction of item i's footprint on a 10 × 10 grid, counting only items nearer the access face.
+- Extraction: c_ext = Σ_j ρ_j (C_grasp + κ m_j), summed over the transitive blockers j of item i, with C_grasp = 2, κ = 0.05 kg⁻¹, and ρ_j = 0.4 for consumable or waste items and 1 otherwise.
 
 The objective is the mean CASC over packed items. A layout with no packed item receives f₁ = 9999 and f₂ = 0.
 
 ### 3.3 Optimisers
 
-**NSGA-II.** We use NSGA-II with constrained domination on (g₁, g₂). Population and generations are 100 and 100 for N ≤ 121, and 50 and 50 for N ≥ 250. The operators are:
-
-- **Crossover:** OX1 order crossover on σ and uniform crossover on o (mask 0.5), applied with probability 0.9.
-- **Mutation:** swap or inversion on σ, and reset on each orientation gene, each with probability 1/N.
-- **Duplicates:** eliminated.
+**NSGA-II.** We use NSGA-II with constrained domination on (g₁, g₂). Population and generations are 100 and 100 for N ≤ 121, and 50 and 50 for N ≥ 250. Crossover applies OX1 order crossover to σ and uniform crossover (mask 0.5) to o, with probability 0.9. Mutation applies swap or inversion to σ and resets each orientation gene, each with probability 1/N. Duplicates are eliminated.
 
 **SMS-EMOA.** Section 6.5 uses SMS-EMOA with the same operators, population and generations. It differs from NSGA-II only in its survival rule: least hypervolume contribution among feasible solutions, and constraint violation among infeasible ones.
 
 ### 3.4 Constructive priors used as baselines
 
-- **Volume repair (Baldwinian).** If decoding leaves an item unplaced, the chromosome is re-decoded with σ stably sorted by decreasing item volume and the same orientations. The decode with less unplaced volume is kept, and the genotype is not modified.
-- **Seeded NSGA-II.** The initial population contains one BFD-V chromosome: the decreasing-volume sequence with the orientations that BFD-V chose. A test verifies that it decodes to exactly the BFD-V layout. The rest of the population is random.
-- **Large-item repair** (Section 6.3 only). As the volume repair, but only items at or above the median volume move to the front. The smaller items keep their order from σ.
+- Volume repair (Baldwinian). If decoding leaves an item unplaced, the chromosome is re-decoded with σ stably sorted by decreasing item volume and the same orientations. The decode with less unplaced volume is kept, and the genotype is not modified.
+- Seeded NSGA-II. The initial population contains one BFD-V chromosome: the decreasing-volume sequence with the orientations that BFD-V chose. A test verifies that it decodes to exactly the BFD-V layout. The rest of the population is random.
+- Large-item repair (Section 6.3 only). Like the volume repair, but only items at or above the median volume move to the front. The smaller items keep their order from σ.
 
 ### 3.5 Feasibility-adaptive portfolio seeding (FAPS)
 
-FAPS starts from the two observations above. The constructive order is what restores feasibility (Section 6.6), but forcing it on every failed evaluation distorts the trade-off (Section 6.3). A single seed is valuable when it is feasible and of little use otherwise. FAPS therefore supplies several constructive orders as seeds, and keeps the repair as a fallback:
+FAPS follows from two findings. The constructive order is what restores feasibility (Section 6.6), and forcing it on every failed evaluation distorts the trade-off (Section 6.3). A single seed helps when it is feasible and hardly at all otherwise. FAPS therefore starts from several constructive orders and keeps the repair as a fallback:
 
 ```
 FAPS(instance, budget):
@@ -112,49 +95,27 @@ FAPS(instance, budget):
 
 **Cost.** The portfolio costs four constructions before the search. Their decoder calls are counted in the reported totals. The repair, once active, costs one extra decode per failed evaluation, as the volume repair does. FAPS has one parameter beyond NSGA-II, the activation point of 10% of the generations, which was fixed before any FAPS run and not tuned.
 
-**Activation in practice.** Across the 440 FAPS runs:
-
-- The repair never activated when at least one seed was feasible. These instances were SC1-100, SC1-250, SC1-500, SC2-250, SC2-500, BR1-2 and BR4-2.
-- When no seed was feasible, it activated at generation 10 in 228 of 230 runs.
+**Activation in practice.** Across the 440 FAPS runs, the repair never activated when at least one seed was feasible (SC1-100, SC1-250, SC1-500, SC2-250, SC2-500, BR1-2 and BR4-2). When no seed was feasible it activated at generation 10 in 228 of 230 runs.
 
 ### 3.6 Further baselines
 
-- **Plain NSGA-II.**
-- **Random search,** with the same number of evaluations as NSGA-II on the same instance and seed.
-- **Three deterministic constructions** using the same EP decoder with all permitted rotations at each extreme point: First-Fit (FF) in dataset order, BFD-V by decreasing volume, and BFD-P by decreasing priority.
+We also run plain NSGA-II; random search with the same number of evaluations as NSGA-II on the same instance and seed; and three deterministic constructions that use the same EP decoder with all permitted rotations at each extreme point: First-Fit (FF) in dataset order, BFD-V by decreasing volume, and BFD-P by decreasing priority.
 
 ## 4. Experimental Design
 
-**Synthetic instances.** There are twelve synthetic instances (HyperDock-Bench V1) with N ∈ {50, 100, 250, 500} in three scenarios:
-
-- **SC1:** consumable-heavy, 80% volume utilisation.
-- **SC2:** safety-item-heavy (40%), 80% utilisation.
-- **SC3:** SC1's item mix at 96% utilisation.
+**Synthetic instances.** There are twelve synthetic instances (HyperDock-Bench V1) with N ∈ {50, 100, 250, 500} in three scenarios: SC1 is consumable-heavy at 80% volume utilisation, SC2 is 40% safety items at 80% utilisation, and SC3 has SC1's item mix at 96% utilisation.
 
 Item sizes follow cargo-transfer-bag classes plus an irregular class. Masses are lognormal by category, and each container is a cube sized to the target utilisation. Every instance is seeded from its identifier, and the generator reproduces all twelve files exactly (`docs/DATASETS.md`). No method finds a valid packing on any SC3 instance, so SC3 is reported in Section 6.1 but excluded from the tests.
 
 **External instances.** Twelve instances are adapted from the Bischoff–Ratcliff benchmark, classes BR1–BR10. Section 6.4 describes them.
 
-**Runs.**
-
-- **Synthetic:** NSGA-II, the volume repair, seeded NSGA-II, FAPS and random search on seeds 1–30 for the eight SC1 and SC2 instances. The large-item repair was also run on these instances with 30 seeds.
-- **Bischoff–Ratcliff:** every method on seeds 1–10.
-- **Other studies:** an SMS-EMOA study (Section 6.5), the ablation (Section 6.6) and the contact study (Section 6.7) use 10 seeds each.
-
-Including SC3 and the deterministic constructions, the study comprises about 3,100 runs. Every evaluated chromosome is archived, so comparisons use all evaluations rather than only the final population. All objective values come from the CPU reference scorer.
+**Runs.** On the eight SC1 and SC2 instances, NSGA-II, the volume repair, seeded NSGA-II, FAPS, random search and the large-item repair each ran on seeds 1–30. On the Bischoff–Ratcliff instances every method ran on seeds 1–10. The SMS-EMOA study (Section 6.5), the ablation (Section 6.6) and the contact study (Section 6.7) use 10 seeds each. Including SC3 and the deterministic constructions, the study comprises about 3,100 runs. Every evaluated chromosome is archived, and comparisons use all evaluations, including those outside the final population. All objective values come from the CPU reference scorer.
 
 **Platform.** A laptop with 28 logical CPU cores and an NVIDIA RTX 4050 Laptop GPU, running Python 3.12, pymoo 0.6.2, numpy 2.5.4, scipy 1.18.1 and numba 0.68.1.
 
-**Metrics.**
+**Metrics.** The feasible-run rate is the fraction of seeds with at least one feasible evaluation. For hypervolume (HV), the feasible points of all methods and seeds in a study are pooled per instance and min-max normalised on that pool, and HV is computed with reference point (1.1, 1.1). A run with no feasible point has HV 0. HV values can be compared within an instance and study, but not across studies with different method sets. IGD is the distance to the non-dominated pooled set and is defined for feasible runs only.
 
-- **Feasible-run rate:** the fraction of seeds with at least one feasible evaluation.
-- **Hypervolume (HV):** per instance, the feasible points of all methods and seeds in a study are pooled and min-max normalised on that pool. HV is computed with reference point (1.1, 1.1). A run with no feasible point has HV 0. HV values are comparable within an instance and study, not across studies with different method sets.
-- **IGD:** distance to the non-dominated pooled set, defined for feasible runs only.
-
-**Statistics.**
-
-- **Per instance:** two-sided Wilcoxon signed-rank tests paired by seed, Cliff's δ as effect size, and bootstrap 95% intervals of the mean (10,000 resamples). Holm correction is applied across instances within each comparison. Comparisons where both methods have HV 0 in every run are excluded from the family, because no test is possible there.
-- **Across instances:** a Friedman test on per-instance mean HV over all 20 instances, followed by pairwise Wilcoxon tests over instances.
+**Statistics.** Per instance, we use two-sided Wilcoxon signed-rank tests paired by seed, Cliff's δ as effect size, and bootstrap 95% intervals of the mean (10,000 resamples). Holm correction is applied across instances within each comparison. Comparisons where both methods have HV 0 in every run are excluded from the family, because no test is possible there. Across instances, we use a Friedman test on per-instance mean HV over all 20 instances, followed by pairwise Wilcoxon tests over instances.
 
 With n seeds, the smallest attainable two-sided p-value is 2/2ⁿ: 0.002 for 10 seeds and 1.9 × 10⁻⁹ for 30. With Holm correction over 12 Bischoff–Ratcliff instances, tests on 10 seeds have limited power.
 
@@ -162,12 +123,7 @@ With n seeds, the smallest attainable two-sided p-value is 2/2ⁿ: 0.002 for 10 
 
 **Batched-scorer defect.** A batched PyTorch scorer packs a population on the CPU and evaluates the accessibility objective on the GPU. It passed unplaced items as zero rows and scored them as real items at the origin, with errors up to about 0.1 in mean CASC. Fully packed layouts were unaffected, so an equivalence check on them passed, yet most layouts visited during search are partially packed. The corrected scorer masks padding rows. It matches the CPU reference to within 8 × 10⁻⁸ on partially packed layouts, and regression tests cover that case. An earlier analysis of this system used the defective scorer and is withdrawn (Appendix A).
 
-**Reproducibility checks.** Pareto points from the laptop runs were re-decoded and re-scored in a separate Linux environment with different package versions, and the objective values were identical. The deterministic heuristics produced identical layouts in both environments. The test suite (52 tests) checks that:
-
-- the generic implementation of every variant reproduces the published methods exactly;
-- every constructive seed decodes to its construction's layout;
-- FAPS's inactive repair leaves evaluations unchanged;
-- every Bischoff–Ratcliff box respects its orientation flags.
+**Reproducibility checks.** Pareto points from the laptop runs were re-decoded and re-scored in a separate Linux environment with different package versions, and the objective values were identical. The deterministic heuristics produced identical layouts in both environments. The test suite (52 tests) checks that the generic implementation of every variant reproduces the published methods exactly, that every constructive seed decodes to its construction's layout, that FAPS's inactive repair leaves evaluations unchanged, and that every Bischoff–Ratcliff box respects its orientation flags.
 
 ## 6. Results
 
@@ -190,14 +146,11 @@ With n seeds, the smallest attainable two-sided p-value is 2/2ⁿ: 0.002 for 10 
 
 **Plain NSGA-II rarely returns a valid packing.** It does so in at most 18 of 30 seeds on any instance, never on SC1-100 or SC2-250, and in at most 4 seeds on SC1-250, SC1-500 and SC2-500. Random search never does. On SC3 (96% utilisation) no method, including the three heuristics, packs every item.
 
-**The single-prior baselines split by instance.** The volume repair is feasible in 87–100% of seeds. Between the two baselines, seeding is significantly better on five instances and the repair on two:
-
-- **Seeding wins** on all four instances with 250 or more items, and on SC2-50.
-- **The repair wins** on SC1-50 and SC1-100.
+**The single-prior baselines split by instance.** The volume repair is feasible in 87–100% of seeds. Seeding is significantly better than the repair on all four instances with 250 or more items and on SC2-50; the repair is better on SC1-50 and SC1-100.
 
 **FAPS against all three.** FAPS beats plain NSGA-II on all eight instances. It is never significantly worse than seeding and is better on three (SC1-500, SC2-100, SC2-500). It beats the repair on five and is worse on one, SC1-100. Its feasible-seed counts match or exceed both baselines everywhere except SC1-50 (21, against 26 for the repair).
 
-**Why FAPS loses on SC1-100.** There the volume seed is feasible, so FAPS behaves like seeded NSGA-II and inherits seeding's weakness on that instance. The repair produces the best fronts on SC1-100 for both optimisers (Section 6.5). This is the one consistent failure of FAPS in our data.
+**Why FAPS loses on SC1-100.** There the volume seed is feasible, so FAPS behaves like seeded NSGA-II and inherits seeding's weakness on that instance. The repair produces the best fronts on SC1-100 under both optimisers (Section 6.5), and this is the only instance where FAPS loses consistently.
 
 ![Hypervolume per run (30 seeds). Diamonds mark BFD-V where it is feasible.](figures/fig_hv.png)
 
@@ -214,7 +167,7 @@ With n seeds, the smallest attainable two-sided p-value is 2/2ⁿ: 0.002 for 10 
 
 ![Mean rank over the 20 instances (1 = best).](figures/fig_ranks.png)
 
-The Nemenyi critical difference at α = 0.05 for four methods and 20 instances is 1.05. FAPS's rank is therefore significantly better than seeded NSGA-II's and plain NSGA-II's by that conservative criterion. Its margin over the volume repair, 0.95, is just below the critical difference, although the instance-level Wilcoxon test is significant even after a three-way Holm correction (p = 0.005).
+The Nemenyi critical difference at α = 0.05 for four methods and 20 instances is 1.05. By that conservative criterion, FAPS ranks significantly better than seeded and plain NSGA-II. Its margin over the volume repair, 0.95, is just below the critical difference, although the instance-level Wilcoxon test is significant even after a three-way Holm correction (p = 0.005).
 
 ### 6.3 What the priors do to the trade-off
 
@@ -236,13 +189,13 @@ Table 1 compares runs that differ in feasibility. Table 3 restricts each compari
 | SC2-500 | FAPS vs seeded | 30 | **0.725** / 0.558 (5 × 10⁻⁴) | **0.568** / 0.584 (0.003) | **0.139** / 0.129 (0.015) |
 | SC1-100 | FAPS vs repair | 30 | 0.248 / **0.581** (2 × 10⁻⁸) | 0.063 / **0.057** (3 × 10⁻⁵) | 0.173 / **0.189** (2 × 10⁻⁷) |
 
-**The repair shifts the front; it does not improve it.** On every instance where enough seeds are feasible for both, the repair's hypervolume is indistinguishable from plain NSGA-II's. Its fronts reach significantly lower CoM deviation and significantly lower accessibility. A plausible mechanism: re-decoding from largest to smallest places the largest items first, at the access face, which keeps mass compact but buries small items behind large blockers.
+**The repair moves the front along the trade-off.** On every instance where enough seeds are feasible for both, the repair's hypervolume is indistinguishable from plain NSGA-II's, while its fronts reach significantly lower CoM deviation and significantly lower accessibility. We suspect the following mechanism: re-decoding from largest to smallest places the largest items first, at the access face, which keeps mass compact but buries small items behind large blockers.
 
-**Seeding improves the front at scale.** On all four instances with 250 or more items, seeding beats the repair on both objectives in every comparison, each significant. Two are shown in the table.
+**Seeding improves the front at scale.** On all four instances with 250 or more items, seeding beats the repair on both objectives in every comparison, each significant; the table shows two.
 
-**FAPS removes the repair's accessibility penalty.** Against the repair on shared feasible seeds, FAPS reaches significantly higher accessibility on every synthetic instance except SC2-50, where there is no difference, and SC1-100, where it is lower. Its CoM deviation is equal or better except on SC1-50 and SC1-100. On the 500-item instances it also improves on single seeding in both objectives, which suggests that the portfolio's diversity, not just one good seed, drives the gain.
+**FAPS removes the repair's accessibility penalty.** Against the repair on shared feasible seeds, FAPS reaches significantly higher accessibility on every synthetic instance except SC2-50, where there is no difference, and SC1-100, where it is lower. Its CoM deviation is equal or better except on SC1-50 and SC1-100. On the 500-item instances it also improves on single seeding in both objectives, which suggests the gain comes from having several starting structures.
 
-**The large-item repair partly fixes the penalty, at a cost.** It moves only the large items to the front. On SC2-100 it recovers part of the repair's accessibility penalty (CASC 0.253 against 0.208, p = 1 × 10⁻⁴), but it is feasible in fewer seeds (20 of 30), and it is significantly worse than the volume repair in overall HV on SC1-50, SC1-500 and SC2-500. FAPS achieves the same goal without that loss.
+**The large-item repair partly fixes the penalty, at a cost.** It moves only the large items to the front. On SC2-100 it recovers part of the repair's accessibility penalty (CASC 0.253 against 0.208, p = 1 × 10⁻⁴), but it is feasible in fewer seeds (20 of 30), and it is significantly worse than the volume repair in overall HV on SC1-50, SC1-500 and SC2-500. FAPS recovers accessibility without losing feasibility or HV.
 
 ![Pooled run fronts on SC2-50 (left) and SC1-250 (right).](figures/fig_fronts.png)
 
@@ -278,16 +231,9 @@ The extended-set problems were extracted from the archive and verified against i
 
 ![Feasible-run rate (top) and mean hypervolume (bottom) on the Bischoff–Ratcliff instances.](figures/fig_br.png)
 
-**Heterogeneity decides whether a single prior helps.**
+**Cargo heterogeneity determines whether a single prior helps.** With 3 box types, plain NSGA-II is usually feasible and the volume repair lowers front quality; on BR1-1's shared feasible seeds the repair reaches higher CoM deviation (0.141 against 0.072 m for FAPS) and lower accessibility. From 20 box types upward, plain NSGA-II never finds a valid packing and no constructive solution is feasible, so seeding yields only 0–5 feasible seeds and the repair becomes necessary.
 
-- With 3 box types, plain NSGA-II is usually feasible, and the volume repair lowers front quality. On BR1-1's shared feasible seeds, the repair reaches higher CoM deviation (0.141 against 0.072 m for FAPS) and lower accessibility.
-- From 20 box types upward, plain NSGA-II never finds a valid packing, and no constructive solution is feasible. Seeding is then nearly useless, with 0–5 feasible seeds, and the repair is necessary.
-
-**FAPS handles all three regimes.**
-
-- **When a seed is feasible** (BR1-2, BR4-2), FAPS behaves like seeding with a richer portfolio.
-- **When no seed is feasible but the search can find feasibility** (BR1-1), its repair activates and the diverse seeds still dominate. Its HV there is 0.538, against 0.273 for NSGA-II and 0.125 for the repair.
-- **When neither the seeds nor the plain search are feasible** (BR7–BR10), the repair activates and FAPS matches or exceeds it.
+**FAPS across these regimes.** When a seed is feasible (BR1-2, BR4-2), FAPS behaves like seeding with more seeds. On BR1-1 no seed is feasible but plain search sometimes is; the repair activates and FAPS reaches HV 0.538, against 0.273 for NSGA-II and 0.125 for the repair. On BR7–BR10, where neither seeds nor plain search are feasible, the repair activates and FAPS matches or exceeds it.
 
 FAPS has the best mean on 11 of 12 instances, and is never significantly worse than any method. The exception, BR7-2, goes to the repair (0.329 against 0.293, Holm p = 1.0). With ten seeds and twelve instances in the Holm family, many large differences do not reach significance individually. The instance-level analysis in Section 6.2 pools them.
 
@@ -308,14 +254,7 @@ To test whether the findings depend on NSGA-II, we re-ran plain search, the volu
 | BR4-2 | 0.056 · 2 | 0.366 · 10 | 0.446 · 10 | **0.622** · 10 | vs seeded: 1.0 |
 | BR7-2 | 0 · 0 | **0.375** · 8 | 0.116 · 3 | 0.356 · 10 | vs repair: 1.0 |
 
-The pattern under SMS-EMOA matches NSGA-II:
-
-- Plain search is rarely feasible.
-- The repair wins on SC1-50 and SC1-100.
-- Seeding wins on SC1-250 and SC2-250, and FAPS ties with it there.
-- FAPS is clearly best on BR1-1 and BR4-2.
-
-FAPS is significantly worse than the best competitor only on SC1-100, the same instance as under NSGA-II. Its improvement over plain SMS-EMOA is Holm-significant on five instances. The conclusions are therefore not specific to NSGA-II's survival rule.
+Under SMS-EMOA the pattern matches NSGA-II. Plain search is rarely feasible, the repair wins on SC1-50 and SC1-100, seeding wins on SC1-250 and SC2-250 with FAPS close behind, and FAPS is clearly best on BR1-1 and BR4-2. FAPS is significantly worse than the best competitor only on SC1-100, the same instance as under NSGA-II. Its improvement over plain SMS-EMOA is Holm-significant on five instances. The conclusions hold under a hypervolume-based survival rule as well as NSGA-II's.
 
 ### 6.6 Ablation of the volume repair
 
@@ -333,9 +272,7 @@ Six one-component ablations of the volume repair were run on SC1-100 and SC2-100
 | CASC without occlusion term | 0.695 ± 0.119 | 10 | 0.11 | 0.395 ± 0.183 | 9 | 1.0 |
 | CASC without extraction term | 0.661 ± 0.090 | 10 | 0.17 | 0.371 ± 0.164 | 9 | 1.0 |
 
-- **The order matters.** A repair that re-decodes in random order is no better than no repair, so the gain comes from the decreasing-volume prior, not from a second decoding attempt.
-- **Orientation search is essential.**
-- **No single CASC term drives the search.** Removing any one term from the search objective does not significantly change the full-objective front.
+A repair that re-decodes in random order is no better than no repair, so the gain comes from the decreasing-volume order itself; a second decoding attempt alone does nothing. Removing orientation search destroys feasibility on both instances. Removing any single CASC term from the search objective does not significantly change the full-objective front.
 
 ### 6.7 Contact-constrained packing
 
@@ -350,16 +287,11 @@ Under a contact constraint, each item away from the access face must rest at lea
 | SC2-50 | 0.181 ± 0.214 · 5 | 0.206 ± 0.206 · 6 | **0.335 ± 0.095** · 10 | 0.141 ± 0.156 · 5 | 0.158 |
 | SC2-100 | 0.171 ± 0.384 · 3 | 0.074 ± 0.234 · 1 | **0.240 ± 0.261** · 5 | 0.158 ± 0.264 · 3 | infeasible |
 
-The contact constraint sharply reduces feasibility for every method. A constructive prior is still needed, and the repair and seeding still win on different instances. The magnitudes in the unconstrained study do not carry over to a physically constrained packer.
+The contact constraint sharply reduces feasibility for every method. A constructive prior is still needed, and the repair and seeding still win on different instances, but the effect sizes from the unconstrained study should not be expected under contact physics.
 
 ### 6.8 Sensitivity to the objective definition
 
-For the volume repair against plain NSGA-II, we re-decoded and re-scored every Pareto point under nine changed settings:
-
-- each of L_arm, λ, C_grasp and κ halved and doubled;
-- the CoM target and dry mass moved to the container centre.
-
-BFD-V was re-run under each setting, and the statistics were recomputed. This analysis used the first study's seeds, 30 for N ≤ 100 and 10 for N ≥ 250. With the original constants it reproduces that study exactly.
+For the volume repair against plain NSGA-II, we re-decoded and re-scored every Pareto point under nine changed settings: each of L_arm, λ, C_grasp and κ halved and doubled, and the CoM target and dry mass moved to the container centre. BFD-V was re-run under each setting, and the statistics were recomputed. This analysis used the first study's seeds, 30 for N ≤ 100 and 10 for N ≥ 250. With the original constants it reproduces that study exactly.
 
 **Table 8.** Robustness of the repair-against-NSGA-II comparison (eight instances).
 
@@ -372,17 +304,11 @@ BFD-V was re-run under each setting, and the statistics were recomputed. This an
 | κ × 0.5 / × 2 | 8 / 8 | 7 / 7 | 5 / 5 |
 | CoM target at container centre | 7 | 6 | 5 |
 
-No change to the accessibility constants alters the direction of the comparison. Moving the CoM target reverses one instance, SC2-50. This analysis re-scores existing fronts rather than re-optimising, and it does not cover seeding or FAPS.
+No change to the accessibility constants alters the direction of the comparison. Moving the CoM target reverses one instance, SC2-50. This analysis re-scores existing fronts without re-optimising, and it does not cover seeding or FAPS.
 
 ### 6.9 Computational cost
 
-**Decoder calls.**
-
-- **Volume repair:** almost two decoder calls per evaluation.
-- **Seeded NSGA-II:** one, like plain NSGA-II.
-- **FAPS:** one per evaluation plus four constructions when a seed is feasible. When the repair activates, at generation 10, it costs about 1.9 calls per evaluation.
-
-The budget is matched in evaluations, so a time-matched comparison would favour single-decode methods. FAPS never uses more decoder calls than the volume repair, which it beats on 16 of 20 instances.
+**Decoder calls.** The volume repair uses almost two decoder calls per evaluation, and seeded NSGA-II uses one, like plain NSGA-II. FAPS uses one per evaluation plus four constructions when a seed is feasible, and about 1.9 per evaluation once the repair activates at generation 10. The budget is matched in evaluations, so a time-matched comparison would favour single-decode methods. FAPS never uses more decoder calls than the volume repair, which it beats on 16 of 20 instances.
 
 **Wall-clock time.** Later studies ran with different parallel loads, so wall-clock times are not compared. In the first study, the volume repair took 1.6–1.75 times NSGA-II's wall-clock time.
 
@@ -390,22 +316,17 @@ The budget is matched in evaluations, so a time-matched comparison would favour 
 
 ## 7. Discussion
 
-**Feasibility first.** Hypervolume against a feasible reference front assigns 0 to a run without a valid packing. A method that is often infeasible therefore loses even when its feasible fronts are as good. Table 1 alone would suggest that the volume repair finds better trade-offs than plain NSGA-II. Table 3 shows that it does not: it finds valid packings, and among valid packings it occupies a different region of the front. Evaluations of decoder-based packing MOEAs should report feasible-run rates and a feasibility-conditioned comparison alongside overall hypervolume.
+**Feasibility first.** Hypervolume against a feasible reference front assigns 0 to a run without a valid packing. A method that is often infeasible therefore loses even when its feasible fronts are as good. Read alone, Table 1 suggests that the volume repair finds better trade-offs than plain NSGA-II. Table 3 shows that it finds valid packings more often, and that among valid packings it sits in a different region of the front with the same hypervolume. Evaluations of decoder-based packing MOEAs should report feasible-run rates and a feasibility-conditioned comparison alongside overall hypervolume.
 
-**Why FAPS works.** The two standard priors fail in complementary regimes:
+**Why FAPS works.** The two standard priors fail in complementary regimes. Seeding needs a feasible constructive solution. The repair always restores feasibility, but it overrides the search on every failed evaluation and biases the trade-off. FAPS's portfolio raises the chance that some seed is feasible: the volume order fails on BR1-1 and SC2-100, yet the mass order succeeds on SC2-500, for example. Even infeasible seeds give the search diverse starting structure. The delayed repair supplies feasibility only when the search shows it cannot find any. The ablation shows why the fallback must be volume-ordered: a random-order repair gives no feasibility.
 
-- **Seeding** needs a feasible constructive solution.
-- **The repair** always restores feasibility, but it overrides the search on every failed evaluation and biases the trade-off.
-
-FAPS's portfolio raises the chance that some seed is feasible: the volume order fails on BR1-1 and SC2-100, yet the mass order succeeds on SC2-500, for example. Even infeasible seeds give the search diverse starting structure. The delayed repair supplies feasibility only when the search shows it cannot find any. The ablation shows why the fallback must be volume-ordered: a random-order repair gives no feasibility.
-
-**Where FAPS falls short.** On SC1-100, under both optimisers, the repair's fronts are much better than those of any seeded method. There, a feasible seed exists, so FAPS never activates the repair, and the seeded population converges to a worse region than the repair reaches. Activating the repair whenever it helps, rather than only when no feasible solution exists, would need a different trigger, for example one based on the progress of hypervolume. We leave that to future work.
+**Where FAPS falls short.** On SC1-100, under both optimisers, the repair's fronts are much better than those of any seeded method. There, a feasible seed exists, so FAPS never activates the repair, and the seeded population converges to a worse region than the repair reaches. Activating the repair whenever it helps would need a different trigger, for example one based on hypervolume progress. We leave that to future work.
 
 **Whether a prior is needed depends on the cargo.** On near-homogeneous cargo (BR1) the decoder already finds valid packings, and a forced volume order constrains the search without helping it. On heterogeneous cargo (SC1, SC2, BR7–BR10) the decoder fails without help. FAPS covers both regimes by construction, so practitioners need not decide in advance.
 
-**Strong constructive baselines are necessary.** BFD-V alone is feasible on seven of the twenty instances, including five synthetic ones where plain NSGA-II rarely or never is. A study comparing an MOEA only with random search would overstate the value of the search.
+**Strong constructive baselines.** BFD-V alone is feasible on seven of the twenty instances, including five synthetic ones where plain NSGA-II rarely or never is. A study comparing an MOEA only with random search would overstate the value of the search.
 
-**Check numerical equivalence on the layouts the search visits.** The scorer defect in Section 5 was invisible to an equivalence check on fully packed layouts, and appeared only on the partially packed layouts that dominate search.
+**Equivalence checks.** The scorer defect in Section 5 passed an equivalence check on fully packed layouts and showed up only on the partially packed layouts that dominate search, so accelerated scorers should be checked on the layouts the search actually visits.
 
 ## 8. Threats to Validity and Limitations
 
@@ -436,30 +357,15 @@ FAPS's portfolio raises the chance that some seed is feasible: the volume order 
 
 ## 9. Conclusion
 
-On heterogeneous cargo, decoder-based multi-objective search for CoM–accessibility packing rarely returns a valid packing on its own. The two standard ways of injecting a constructive packing order each fail somewhere:
+On heterogeneous cargo, decoder-based multi-objective search for CoM–accessibility packing rarely returns a valid packing on its own. The two standard ways of injecting a constructive packing order each fail somewhere. A Baldwinian volume repair restores feasibility but trades accessibility for compactness. A single seed improves the front at scale and does nothing when the constructive solution is infeasible. On near-homogeneous cargo, either can be worse than no prior.
 
-- A Baldwinian volume repair restores feasibility but shifts the front toward compactness at the expense of accessibility.
-- A single seed improves the front at scale but is useless when the constructive solution is infeasible.
-- On near-homogeneous cargo, both can be worse than no prior.
+Feasibility-adaptive portfolio seeding combines several constructive seeds with a repair that activates only if the search finds no valid packing early. It has the best mean rank over 20 instances (Friedman p = 4.5 × 10⁻⁸) and a higher mean hypervolume than every competitor on 16 to 20 of the 20 instances. On shared feasible seeds it recovers the accessibility the repair gives up, and it behaves the same under SMS-EMOA. It still loses to the repair on one instance under both optimisers, and its gains under contact physics were not tested.
 
-Feasibility-adaptive portfolio seeding combines several constructive seeds with a repair that activates only if the search finds no valid packing early. It has the best mean rank over 20 instances (Friedman p = 4.5 × 10⁻⁸) and a higher mean hypervolume than every competitor on 16 to 20 of the 20 instances. It removes the repair's accessibility penalty on shared feasible seeds, and behaves the same under SMS-EMOA. It still loses to the repair on one instance under both optimisers, and its gains under contact physics were not tested.
-
-Evaluations of packing optimisers should report feasibility separately from front quality and include strong constructive baselines. The next steps are:
-
-- a progress-based repair trigger;
-- contact- and equilibrium-aware decoders;
-- accessibility-aware construction orders;
-- validation of the surrogates against operational data.
+Evaluations of packing optimisers should report feasibility separately from front quality and include strong constructive baselines. Natural next steps are a progress-based repair trigger, contact- and equilibrium-aware decoders, accessibility-aware construction orders, and validation of the surrogates against operational data.
 
 ## Reproducibility Statement
 
-The derived data behind every table and figure are in `docs/paper/data/`. The test suite (`pytest tests`, 52 tests) covers:
-
-- the scorer correction;
-- every method variant, including FAPS;
-- the constructive seeds;
-- the contact and ablation decoders;
-- the Bischoff–Ratcliff orientation flags.
+The derived data behind every table and figure are in `docs/paper/data/`. The test suite (`pytest tests`, 52 tests) covers the scorer correction, every method variant including FAPS, the constructive seeds, the contact and ablation decoders, and the Bischoff–Ratcliff orientation flags.
 
 Run the following from the repository root:
 
@@ -505,7 +411,7 @@ An earlier version of this work reported that NSGA-II significantly outperformed
 
 1. They were computed with the defective batched scorer (Section 5).
 2. Most reported solutions were infeasible.
-3. The significance test compared 30 stochastic hypervolumes with a single fixed baseline value. That test asks whether every run exceeds the value, not whether the methods differ.
+3. The significance test compared 30 stochastic hypervolumes with a single fixed baseline value. That test asks whether every run exceeds the value, which is a different question from whether the methods differ.
 4. The GPU benchmark timed packing and scoring together, including start-up, and its equivalence check compared empty outputs.
 
 ## References
