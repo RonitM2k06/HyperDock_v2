@@ -21,9 +21,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 C = {"nsga2": "#2a78d6", "nsga2_repair": "#eb6834", "nsga2_seeded": "#1baf7a",
-     "nsga2_repair_large": "#eda100", "random": "#8a8a85", "BFD-V": "#2b2b29"}
+     "nsga2_repair_large": "#8a8a85", "faps": "#eda100", "random": "#8a8a85", "BFD-V": "#2b2b29"}
 LABEL = {"nsga2": "NSGA-II", "nsga2_repair": "Volume repair", "nsga2_seeded": "Seeded NSGA-II",
-         "nsga2_repair_large": "Large-item repair", "random": "Random search", "BFD-V": "BFD-V (deterministic)"}
+         "nsga2_repair_large": "Large-item repair", "faps": "FAPS (proposed)", "random": "Random search",
+         "BFD-V": "BFD-V (deterministic)"}
 DS = [f"{s}-{n}" for s in ("SC1", "SC2") for n in (50, 100, 250, 500)]
 INK, MUTED = "#2b2b29", "#6b6b66"
 
@@ -44,7 +45,7 @@ def m_df_methods(m):
 
 def fig_feasibility(m, out):
     present = set(m.method.unique())
-    methods = [k for k in ["nsga2", "nsga2_repair", "nsga2_seeded", "nsga2_repair_large", "BFD-V"]
+    methods = [k for k in ["nsga2", "nsga2_repair", "nsga2_seeded", "faps", "BFD-V"]
                if k in present]
     rate = m.groupby(["dataset", "method"])["feasible"].mean().unstack()
     fig, ax = plt.subplots(figsize=(7.0, 2.6))
@@ -66,12 +67,12 @@ def fig_hv(m, out):
     fig, ax = plt.subplots(figsize=(7.0, 2.8))
     rng = np.random.default_rng(0)
     for i, ds in enumerate(DS):
-        for k, meth in enumerate(["nsga2", "nsga2_repair", "nsga2_seeded"]):
+        for k, meth in enumerate(["nsga2", "nsga2_repair", "nsga2_seeded", "faps"]):
             v = m[(m.dataset == ds) & (m.method == meth)]["HV"].values
             if len(v) == 0:
                 continue
-            xpos = i + (k - 1) * 0.27
-            ax.boxplot(v, positions=[xpos], widths=0.2, showfliers=False,
+            xpos = i + (k - 1.5) * 0.21
+            ax.boxplot(v, positions=[xpos], widths=0.17, showfliers=False,
                        medianprops=dict(color=INK, lw=1.2),
                        boxprops=dict(color=C[meth]), whiskerprops=dict(color=C[meth]),
                        capprops=dict(color=C[meth]))
@@ -85,14 +86,14 @@ def fig_hv(m, out):
     ax.set_ylabel("Hypervolume (normalised)")
     ax.yaxis.grid(True, color="#e6e5e0", lw=0.6)
     ax.set_axisbelow(True)
-    ax.legend(ncol=3, loc="upper center", bbox_to_anchor=(0.5, 1.17))
+    ax.legend(ncol=5, loc="upper center", bbox_to_anchor=(0.5, 1.17), fontsize=8)
     save(fig, out, "fig_hv")
 
 
 def fig_fronts(fr, base_dir, out, datasets=("SC2-50", "SC1-250")):
     fig, axes = plt.subplots(1, len(datasets), figsize=(7.0, 2.9))
     for ax, ds in zip(axes, datasets):
-        for meth in ["nsga2", "nsga2_repair", "nsga2_seeded"]:
+        for meth in ["nsga2", "nsga2_repair", "nsga2_seeded", "faps"]:
             pts = [fr[k] for k in fr.files if k.startswith(f"{ds}__{meth}__") and k.endswith("__F")]
             if pts:
                 P = np.vstack(pts)
@@ -113,16 +114,35 @@ def fig_fronts(fr, base_dir, out, datasets=("SC2-50", "SC1-250")):
         for h, l in zip(*ax.get_legend_handles_labels()):
             if l not in labels:
                 handles.append(h); labels.append(l)
-    fig.legend(handles, labels, ncol=4, loc="upper center", bbox_to_anchor=(0.5, 1.06))
+    fig.legend(handles, labels, ncol=5, loc="upper center", bbox_to_anchor=(0.5, 1.10), fontsize=8)
     fig.tight_layout()
     save(fig, out, "fig_fronts")
 
 
+def fig_ranks(T, out):
+    """Mean rank of each method over instances (rank 1 = highest mean HV)."""
+    R = T.rank(axis=1, ascending=False)
+    order = R.mean().sort_values().index
+    fig, ax = plt.subplots(figsize=(7.0, 1.7))
+    for j, meth in enumerate(order):
+        r = R[meth].mean()
+        ax.barh(j, r, color=C[meth], height=0.6)
+        ax.text(r + 0.04, j, f"{r:.2f}", va="center", fontsize=8, color=INK)
+    ax.set_yticks(range(len(order)), [LABEL[k] for k in order], fontsize=8)
+    ax.invert_yaxis()
+    ax.set_xlabel(f"Mean rank over {len(T)} instances (1 = best)")
+    ax.set_xlim(0, 4.3)
+    ax.xaxis.grid(True, color="#e6e5e0", lw=0.6)
+    ax.set_axisbelow(True)
+    save(fig, out, "fig_ranks")
+
+
 def fig_br(m, out):
     """Feasible-run rate and HV on the Bischoff-Ratcliff instances."""
-    ds = ["BR1-1", "BR1-2", "BR4-1", "BR4-2", "BR7-1", "BR7-2"]
-    methods = ["nsga2", "nsga2_repair", "nsga2_seeded", "nsga2_repair_large"]
-    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.6))
+    ds = [d for d in ["BR1-1", "BR1-2", "BR4-1", "BR4-2", "BR7-1", "BR7-2", "BR8-1", "BR8-2",
+                      "BR9-1", "BR9-2", "BR10-1", "BR10-2"] if d in set(m.dataset)]
+    methods = ["nsga2", "nsga2_repair", "nsga2_seeded", "faps"]
+    fig, axes = plt.subplots(2, 1, figsize=(7.0, 4.4))
     x = np.arange(len(ds))
     w = 0.8 / len(methods)
     for k, meth in enumerate(methods):
@@ -133,13 +153,13 @@ def fig_br(m, out):
         axes[0].bar(x + off, rate, w * 0.88, color=C[meth], label=LABEL[meth])
         axes[1].bar(x + off, hv, w * 0.88, color=C[meth])
     for ax, lab in zip(axes, ["Feasible-run rate", "Mean hypervolume"]):
-        ax.set_xticks(x, ds, fontsize=8)
+        ax.set_xticks(x, ds, fontsize=7)
         ax.set_ylabel(lab)
         ax.yaxis.grid(True, color="#e6e5e0", lw=0.6)
         ax.set_axisbelow(True)
     axes[0].set_ylim(0, 1.05)
     fig.legend(*axes[0].get_legend_handles_labels(), ncol=4, loc="upper center",
-               bbox_to_anchor=(0.5, 1.08), fontsize=8)
+               bbox_to_anchor=(0.5, 1.04), fontsize=8)
     fig.tight_layout()
     save(fig, out, "fig_br")
 
@@ -151,6 +171,7 @@ def main():
     ap.add_argument("--baselines", required=True)
     ap.add_argument("--out", default="docs/paper/figures")
     ap.add_argument("--br-metrics", default=None, help="per_run_metrics.csv of the BR study")
+    ap.add_argument("--ranks", default=None, help="CSV of mean HV per instance (rows) and method (cols)")
     a = ap.parse_args()
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -158,6 +179,8 @@ def main():
     fig_feasibility(m, out)
     fig_hv(m, out)
     fig_fronts(np.load(a.fronts), a.baselines, out)
+    if a.ranks:
+        fig_ranks(pd.read_csv(a.ranks, index_col=0), out)
     if a.br_metrics:
         fig_br(pd.read_csv(a.br_metrics), out)
     print("figures written to", out)
